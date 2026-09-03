@@ -1,0 +1,470 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|c:\\users\\admin\\source\\repos\\document management system\\backend\\document management system\\document management system\\controllers\\approvalscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|solutionrelative:document management system\\controllers\\approvalscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|c:\\users\\admin\\source\\repos\\document management system\\backend\\document management system\\document management system\\controllers\\aiinsightscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|solutionrelative:document management system\\controllers\\aiinsightscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|c:\\users\\admin\\source\\repos\\document management system\\backend\\document management system\\document management system\\models\\invoicedata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|solutionrelative:document management system\\models\\invoicedata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|c:\\users\\admin\\source\\repos\\document management system\\backend\\document management system\\document management system\\controllers\\reportscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|solutionrelative:document management system\\controllers\\reportscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|c:\\users\\admin\\source\\repos\\document management system\\backend\\document management system\\document management system\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|solutionrelative:document management system\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|c:\\users\\admin\\source\\repos\\document management system\\backend\\document management system\\document management system\\controllers\\documentscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|solutionrelative:document management system\\controllers\\documentscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|c:\\users\\admin\\source\\repos\\document management system\\backend\\document management system\\document management system\\models\\approval.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|solutionrelative:document management system\\models\\approval.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|c:\\users\\admin\\source\\repos\\document management system\\backend\\document management system\\document management system\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|solutionrelative:document management system\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|c:\\users\\admin\\source\\repos\\document management system\\backend\\document management system\\document management system\\dtos\\registerrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|solutionrelative:document management system\\dtos\\registerrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|c:\\users\\admin\\source\\repos\\document management system\\backend\\document management system\\document management system\\services\\invoiceextractionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|solutionrelative:document management system\\services\\invoiceextractionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|c:\\users\\admin\\source\\repos\\document management system\\backend\\document management system\\document management system\\services\\pdftextextractionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|solutionrelative:document management system\\services\\pdftextextractionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|c:\\users\\admin\\source\\repos\\document management system\\backend\\document management system\\document management system\\models\\document.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|solutionrelative:document management system\\models\\document.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|c:\\users\\admin\\source\\repos\\document management system\\backend\\document management system\\document management system\\data\\applicationdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|solutionrelative:document management system\\data\\applicationdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|c:\\users\\admin\\source\\repos\\document management system\\backend\\document management system\\document management system\\controllers\\testcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|solutionrelative:document management system\\controllers\\testcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|c:\\users\\admin\\source\\repos\\document management system\\backend\\document management system\\document management system\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|solutionrelative:document management system\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|c:\\users\\admin\\source\\repos\\document management system\\backend\\document management system\\document management system\\migrations\\20260902170803_initialcreate.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|solutionrelative:document management system\\migrations\\20260902170803_initialcreate.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|c:\\users\\admin\\source\\repos\\document management system\\backend\\document management system\\document management system\\migrations\\applicationdbcontextmodelsnapshot.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|solutionrelative:document management system\\migrations\\applicationdbcontextmodelsnapshot.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|c:\\users\\admin\\source\\repos\\document management system\\backend\\document management system\\document management system\\migrations\\20260902170803_initialcreate.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|solutionrelative:document management system\\migrations\\20260902170803_initialcreate.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|c:\\users\\admin\\source\\repos\\document management system\\backend\\document management system\\document management system\\models\\errorviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|solutionrelative:document management system\\models\\errorviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|c:\\users\\admin\\source\\repos\\document management system\\backend\\document management system\\document management system\\models\\applicationuser.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|solutionrelative:document management system\\models\\applicationuser.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|c:\\users\\admin\\source\\repos\\document management system\\backend\\document management system\\document management system\\dtos\\loginrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|solutionrelative:document management system\\dtos\\loginrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|c:\\users\\admin\\source\\repos\\document management system\\backend\\document management system\\document management system\\dtos\\loginresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|solutionrelative:document management system\\dtos\\loginresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|c:\\users\\admin\\source\\repos\\document management system\\backend\\document management system\\document management system\\areas\\identity\\pages\\_viewstart.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|solutionrelative:document management system\\areas\\identity\\pages\\_viewstart.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|c:\\users\\admin\\source\\repos\\document management system\\backend\\document management system\\document management system\\controllers\\homecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|solutionrelative:document management system\\controllers\\homecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|c:\\users\\admin\\source\\repos\\document management system\\backend\\document management system\\document management system\\documentmanagement.db||{25834150-CD7E-11D0-92DF-00A0C9138C45}",
+      "RelativeMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|solutionrelative:document management system\\documentmanagement.db||{25834150-CD7E-11D0-92DF-00A0C9138C45}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|c:\\users\\admin\\source\\repos\\document management system\\backend\\document management system\\document management system\\services\\interfaces.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|solutionrelative:document management system\\services\\interfaces.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Admin\\source\\repos\\Document management system\\Document management system\\Data\\Migrations\\20260902170021_InitialCreate.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Admin\\AppData\\Local\\Temp\\CopilotBaseline\\Deleted\\1118169003\\LoginRequest.cs.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 5,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "AIInsightsController.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Controllers\\AIInsightsController.cs",
+              "RelativeDocumentMoniker": "Document management system\\Controllers\\AIInsightsController.cs",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Controllers\\AIInsightsController.cs",
+              "RelativeToolTip": "Document management system\\Controllers\\AIInsightsController.cs",
+              "ViewState": "AgIAADwBAAAAAAAAAAAcwD0BAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-03T19:28:50.365Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "PdfTextExtractionService.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Services\\PdfTextExtractionService.cs",
+              "RelativeDocumentMoniker": "Document management system\\Services\\PdfTextExtractionService.cs",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Services\\PdfTextExtractionService.cs",
+              "RelativeToolTip": "Document management system\\Services\\PdfTextExtractionService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-03T10:50:46.42Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "DocumentsController.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Controllers\\DocumentsController.cs",
+              "RelativeDocumentMoniker": "Document management system\\Controllers\\DocumentsController.cs",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Controllers\\DocumentsController.cs",
+              "RelativeToolTip": "Document management system\\Controllers\\DocumentsController.cs",
+              "ViewState": "AgIAAI8CAAAAAAAAAADwv5ACAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-03T03:56:50.376Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Program.cs",
+              "RelativeDocumentMoniker": "Document management system\\Program.cs",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Program.cs",
+              "RelativeToolTip": "Document management system\\Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAK0BAAAyAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-02T16:52:14.236Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "AuthController.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Controllers\\AuthController.cs",
+              "RelativeDocumentMoniker": "Document management system\\Controllers\\AuthController.cs",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Controllers\\AuthController.cs",
+              "RelativeToolTip": "Document management system\\Controllers\\AuthController.cs",
+              "ViewState": "AgIAAEsAAAAAAAAAAAAowE0BAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-02T17:33:10.703Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "ApprovalsController.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Controllers\\ApprovalsController.cs",
+              "RelativeDocumentMoniker": "Document management system\\Controllers\\ApprovalsController.cs",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Controllers\\ApprovalsController.cs",
+              "RelativeToolTip": "Document management system\\Controllers\\ApprovalsController.cs",
+              "ViewState": "AgIAADEBAAAAAAAAAAAswEwBAAAoAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-03T15:45:33.705Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "ReportsController.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Controllers\\ReportsController.cs",
+              "RelativeDocumentMoniker": "Document management system\\Controllers\\ReportsController.cs",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Controllers\\ReportsController.cs",
+              "RelativeToolTip": "Document management system\\Controllers\\ReportsController.cs",
+              "ViewState": "AgIAAM8DAAAAAAAAAADwv+kDAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-03T16:44:51.98Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "InvoiceData.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Models\\InvoiceData.cs",
+              "RelativeDocumentMoniker": "Document management system\\Models\\InvoiceData.cs",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Models\\InvoiceData.cs",
+              "RelativeToolTip": "Document management system\\Models\\InvoiceData.cs",
+              "ViewState": "AgIAAB4AAAAAAAAAAAAYwDMAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-03T09:54:59.65Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "RegisterRequest.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\DTOs\\RegisterRequest.cs",
+              "RelativeDocumentMoniker": "Document management system\\DTOs\\RegisterRequest.cs",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\DTOs\\RegisterRequest.cs",
+              "RelativeToolTip": "Document management system\\DTOs\\RegisterRequest.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABQAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-02T17:17:47.061Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "Approval.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Models\\Approval.cs",
+              "RelativeDocumentMoniker": "Document management system\\Models\\Approval.cs",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Models\\Approval.cs",
+              "RelativeToolTip": "Document management system\\Models\\Approval.cs",
+              "ViewState": "AgIAAAQAAAAAAAAAAAAAAAoAAAA4AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-02T16:43:22.478Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "InvoiceExtractionService.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Services\\InvoiceExtractionService.cs",
+              "RelativeDocumentMoniker": "Document management system\\Services\\InvoiceExtractionService.cs",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Services\\InvoiceExtractionService.cs",
+              "RelativeToolTip": "Document management system\\Services\\InvoiceExtractionService.cs",
+              "ViewState": "AgIAAMsAAAAAAAAAAAAkwM4AAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-03T11:01:52.405Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "Document.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Models\\Document.cs",
+              "RelativeDocumentMoniker": "Document management system\\Models\\Document.cs",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Models\\Document.cs",
+              "RelativeToolTip": "Document management system\\Models\\Document.cs",
+              "ViewState": "AgIAACMAAAAAAAAAAAAIwB8AAAA1AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-02T16:42:41.704Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "TestController.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Controllers\\TestController.cs",
+              "RelativeDocumentMoniker": "Document management system\\Controllers\\TestController.cs",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Controllers\\TestController.cs",
+              "RelativeToolTip": "Document management system\\Controllers\\TestController.cs",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAAACYAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-02T18:57:40.572Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "ApplicationDbContext.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Data\\ApplicationDbContext.cs",
+              "RelativeDocumentMoniker": "Document management system\\Data\\ApplicationDbContext.cs",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Data\\ApplicationDbContext.cs",
+              "RelativeToolTip": "Document management system\\Data\\ApplicationDbContext.cs",
+              "ViewState": "AgIAAAIAAAAAAAAAAAAuwBQAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-02T16:44:17.703Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\appsettings.json",
+              "RelativeDocumentMoniker": "Document management system\\appsettings.json",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\appsettings.json",
+              "RelativeToolTip": "Document management system\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-09-02T16:50:10.876Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
+              "Title": "20260902170803_InitialCreate.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Migrations\\20260902170803_InitialCreate.cs",
+              "RelativeDocumentMoniker": "Document management system\\Migrations\\20260902170803_InitialCreate.cs",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Migrations\\20260902170803_InitialCreate.cs",
+              "RelativeToolTip": "Document management system\\Migrations\\20260902170803_InitialCreate.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-02T17:08:03.969Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "ApplicationDbContextModelSnapshot.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Migrations\\ApplicationDbContextModelSnapshot.cs",
+              "RelativeDocumentMoniker": "Document management system\\Migrations\\ApplicationDbContextModelSnapshot.cs",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Migrations\\ApplicationDbContextModelSnapshot.cs",
+              "RelativeToolTip": "Document management system\\Migrations\\ApplicationDbContextModelSnapshot.cs",
+              "ViewState": "AgIAAGIBAAAAAAAAAAAAAA8AAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-03T00:11:21.917Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "20260902170803_InitialCreate.Designer.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Migrations\\20260902170803_InitialCreate.Designer.cs",
+              "RelativeDocumentMoniker": "Document management system\\Migrations\\20260902170803_InitialCreate.Designer.cs",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Migrations\\20260902170803_InitialCreate.Designer.cs",
+              "RelativeToolTip": "Document management system\\Migrations\\20260902170803_InitialCreate.Designer.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAWAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-03T03:01:51.078Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
+              "Title": "ApplicationUser.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Models\\ApplicationUser.cs",
+              "RelativeDocumentMoniker": "Document management system\\Models\\ApplicationUser.cs",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Models\\ApplicationUser.cs",
+              "RelativeToolTip": "Document management system\\Models\\ApplicationUser.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-02T16:41:39.355Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 20,
+              "Title": "LoginRequest.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\DTOs\\LoginRequest.cs",
+              "RelativeDocumentMoniker": "Document management system\\DTOs\\LoginRequest.cs",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\DTOs\\LoginRequest.cs",
+              "RelativeToolTip": "Document management system\\DTOs\\LoginRequest.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-03T01:32:56.375Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "ErrorViewModel.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Models\\ErrorViewModel.cs",
+              "RelativeDocumentMoniker": "Document management system\\Models\\ErrorViewModel.cs",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Models\\ErrorViewModel.cs",
+              "RelativeToolTip": "Document management system\\Models\\ErrorViewModel.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAjAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-03T00:11:28.563Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 21,
+              "Title": "LoginResponse.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\DTOs\\LoginResponse.cs",
+              "RelativeDocumentMoniker": "Document management system\\DTOs\\LoginResponse.cs",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\DTOs\\LoginResponse.cs",
+              "RelativeToolTip": "Document management system\\DTOs\\LoginResponse.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-02T17:21:46.089Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 22,
+              "Title": "_ViewStart.cshtml",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Areas\\Identity\\Pages\\_ViewStart.cshtml",
+              "RelativeDocumentMoniker": "Document management system\\Areas\\Identity\\Pages\\_ViewStart.cshtml",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Areas\\Identity\\Pages\\_ViewStart.cshtml",
+              "RelativeToolTip": "Document management system\\Areas\\Identity\\Pages\\_ViewStart.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-09-03T00:31:03.723Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 27,
+              "Title": "LoginRequest.cs.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\AppData\\Local\\Temp\\CopilotBaseline\\Deleted\\1118169003\\LoginRequest.cs.cs",
+              "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\AppData\\Local\\Temp\\CopilotBaseline\\Deleted\\1118169003\\LoginRequest.cs.cs",
+              "ToolTip": "C:\\Users\\Admin\\AppData\\Local\\Temp\\CopilotBaseline\\Deleted\\1118169003\\LoginRequest.cs.cs",
+              "RelativeToolTip": "..\\..\\..\\..\\..\\AppData\\Local\\Temp\\CopilotBaseline\\Deleted\\1118169003\\LoginRequest.cs.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-03T01:14:10.285Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 24,
+              "Title": "documentmanagement.db",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\documentmanagement.db",
+              "RelativeDocumentMoniker": "Document management system\\documentmanagement.db",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\documentmanagement.db",
+              "RelativeToolTip": "Document management system\\documentmanagement.db",
+              "Icon": "00000000-0000-0000-0000-000000000000.000000|iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAICSURBVDhPrZXNa9JhAIAfx6iZBM7EpWBTpzMdW6tZsA5F0K1T3QZBHwuCgsFYTiaYRFGE7NAH0aAoYtCl/8EOoRteNkhL13TiRqMlBFux\u002BfupXRL09Wfp6Dm9H8/7wHt5XxV/mPJ5M1C2VOaNUa3IJc6HQqEFcYdyuayqjKd8t8p37t6vFRQIBvyo1eofmz\u002B3zyhF28SFZrh8ZVS7X9MR9nq9g\u002BLeroIHjaaG0V0F\u002BUu0vVarZXV9g\u002BRyDrfDgtGgA0Cr1RIM\u002BKs1bXsbYaCTRsFf2zssflqmsFNgc2uLxFKadDaHw2ZmfGJS1AkG/NrKWPHK8VSGbxt5SqUingEXxaJMdvUrubV1Ua1DMTjosiPLMnaLGeshE05bN7Is0e9yiGodisF4Ko0kFYgnv7CUzrKYSCFJEu8jMVGtQzFo7NJjNOiRJInwh3mKsoxB38nw0BFRrUMx2KXXcXp4iAGXg469e3A7bZw9dZJMLsdNX4CFj3G\u002B5/PiMWgUrNBtNjFy4RzOHitPXrzm\u002BatZ\u002BnrtPHo2w8zLN6IO/wpW43b00Ndr58boJfpdh\u002Bl12EQFWgkmPieZj8WYfvyUSHSOSDQqKtBK8OrFEcauXyManWNyfIx7wduiAq0E9Qd0eI4d5d3bWU4c96DR7BMVaCXYLP89WPViT2RA1cQXoER55cHDaSvAb9pFqY18f9aRAAAAAElFTkSuQmCC",
+              "WhenOpened": "2026-09-03T00:11:36.873Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 23,
+              "Title": "HomeController.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Controllers\\HomeController.cs",
+              "RelativeDocumentMoniker": "Document management system\\Controllers\\HomeController.cs",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Controllers\\HomeController.cs",
+              "RelativeToolTip": "Document management system\\Controllers\\HomeController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-03T00:12:23.98Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 25,
+              "Title": "Interfaces.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Services\\Interfaces.cs",
+              "RelativeDocumentMoniker": "Document management system\\Services\\Interfaces.cs",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Services\\Interfaces.cs",
+              "RelativeToolTip": "Document management system\\Services\\Interfaces.cs",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-02T16:40:51.935Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 26,
+              "Title": "20260902170021_InitialCreate.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Document management system\\Data\\Migrations\\20260902170021_InitialCreate.cs",
+              "RelativeDocumentMoniker": "..\\..\\Document management system\\Data\\Migrations\\20260902170021_InitialCreate.cs",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Document management system\\Data\\Migrations\\20260902170021_InitialCreate.cs",
+              "RelativeToolTip": "..\\..\\Document management system\\Data\\Migrations\\20260902170021_InitialCreate.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-02T17:00:21.64Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

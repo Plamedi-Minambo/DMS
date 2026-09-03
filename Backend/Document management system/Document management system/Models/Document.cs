@@ -1,0 +1,46 @@
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace DocumentManagement.API.Models
+{
+    public class Document
+    {
+        [Key]
+        public int Id { get; set; }
+
+        [Required]
+        [MaxLength(255)]
+        public string FileName { get; set; } = string.Empty;
+
+        [Required]
+        [MaxLength(100)]
+        public string FileType { get; set; } = string.Empty;
+
+        public long FileSize { get; set; }
+
+        [Required]
+        public string FilePath { get; set; } = string.Empty;
+
+        [Required]
+        [MaxLength(255)]
+        public string StoredFileName { get; set; } = string.Empty;
+
+        [Required]
+        [MaxLength(64)]
+        public string FileHash { get; set; } = string.Empty;
+
+        public InvoiceData? InvoiceData { get; set; }
+        public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
+
+        [Required]
+        [MaxLength(50)]
+        public string Status { get; set; } = "Pending";
+
+        public string? Description { get; set; }
+
+        public string? UploadedById { get; set; }
+
+        [ForeignKey(nameof(UploadedById))]
+        public ApplicationUser? UploadedBy { get; set; }
+    }
+}

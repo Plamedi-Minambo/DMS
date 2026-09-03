@@ -1,0 +1,53 @@
+import {
+    Routes, Route, Navigate
+}
+
+from "react-router-dom";
+
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import Unauthorized from "./pages/Unauthorized";
+
+import ProtectedRoute from "./components/ProtectedRoute";
+
+function App() {
+    return (
+    <Routes>
+      {/* Default page */}
+      <Route
+        path="/"
+        element={<Navigate to="/login" replace />}
+      />
+
+      {/* Login */}
+      <Route
+        path="/login"
+        element={<Login />}
+      />
+
+      {/* Protected Dashboard */}
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Unauthorized page */}
+      <Route
+        path="/unauthorized"
+        element={<Unauthorized />}
+      />
+
+      {/* Unknown URL */}
+      <Route
+        path="*"
+        element={<Navigate to="/login" replace />}
+      />
+    </Routes>
+  );
+}
+
+export default App;

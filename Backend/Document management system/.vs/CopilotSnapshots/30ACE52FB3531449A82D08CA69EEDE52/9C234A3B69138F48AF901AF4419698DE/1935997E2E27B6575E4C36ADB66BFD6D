@@ -1,0 +1,415 @@
+﻿
+using DocumentManagement.API.Data;
+using DocumentManagement.API.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
+using System.Text;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// ============================================================
+// DATABASE
+// ============================================================
+
+var connectionString =
+    builder.Configuration.GetConnectionString("DefaultConnection");
+
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    throw new InvalidOperationException(
+        "Database connection string 'DefaultConnection' is missing.");
+}
+
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlite(connectionString));
+
+
+// ============================================================
+// ASP.NET CORE IDENTITY
+// ============================================================
+
+builder.Services
+    .AddIdentity<ApplicationUser, IdentityRole>(options =>
+    {
+        options.Password.RequiredLength = 8;
+        options.Password.RequireDigit = true;
+        options.Password.RequireUppercase = true;
+        options.Password.RequireLowercase = true;
+        options.Password.RequireNonAlphanumeric = true;
+
+        options.User.RequireUniqueEmail = true;
+
+        options.SignIn.RequireConfirmedAccount = false;
+    })
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddDefaultTokenProviders();
+
+
+// ============================================================
+// JWT CONFIGURATION
+// ============================================================
+
+var jwtKey = builder.Configuration["Jwt:Key"];
+var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+var jwtAudience = builder.Configuration["Jwt:Audience"];
+
+if (string.IsNullOrWhiteSpace(jwtKey))
+{
+    throw new InvalidOperationException(
+        "JWT key is missing from configuration.");
+}
+
+if (string.IsNullOrWhiteSpace(jwtIssuer))
+{
+    throw new InvalidOperationException(
+        "JWT issuer is missing from configuration.");
+}
+
+if (string.IsNullOrWhiteSpace(jwtAudience))
+{
+    throw new InvalidOperationException(
+        "JWT audience is missing from configuration.");
+}
+
+
+// ============================================================
+// AUTHENTICATION
+// ============================================================
+
+builder.Services
+    .AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme =
+            JwtBearerDefaults.AuthenticationScheme;
+
+        options.DefaultChallengeScheme =
+            JwtBearerDefaults.AuthenticationScheme;
+
+        options.DefaultScheme =
+            JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters =
+            new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+
+                ValidIssuer = jwtIssuer,
+                ValidAudience = jwtAudience,
+
+                IssuerSigningKey =
+                    new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(jwtKey)),
+
+                ClockSkew = TimeSpan.Zero
+            };
+    });
+
+
+// ============================================================
+// AUTHORIZATION
+// ============================================================
+
+builder.Services.AddAuthorization();
+
+
+// ============================================================
+// CONTROLLERS
+// ============================================================
+
+builder.Services.AddControllers();
+
+
+// ============================================================
+// SWAGGER
+// ============================================================
+
+builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Document Management API",
+        Version = "v1",
+        Description =
+            "API for managing documents, users, roles and approvals."
+    });
+
+    options.AddSecurityDefinition(
+        "Bearer",
+        new OpenApiSecurityScheme
+        {
+            Name = "Authorization",
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            In = ParameterLocation.Header,
+            Description =
+                "Enter your JWT token. Example: Bearer eyJhbGciOiJIUzI1NiIs..."
+        });
+
+    options.AddSecurityRequirement(
+        document =>
+            new OpenApiSecurityRequirement
+            {
+                [
+                    new OpenApiSecuritySchemeReference(
+                        "Bearer",
+                        document)
+                ] = []
+            });
+});
+
+
+// ============================================================
+// BUILD APPLICATION
+// ============================================================
+
+var app = builder.Build();
+
+
+// ============================================================
+// DATABASE + ROLE + ADMIN SEEDING
+// ============================================================
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+
+    var roleManager =
+        services.GetRequiredService<RoleManager<IdentityRole>>();
+
+    var userManager =
+        services.GetRequiredService<UserManager<ApplicationUser>>();
+
+    var dbContext =
+        services.GetRequiredService<ApplicationDbContext>();
+
+    // --------------------------------------------------------
+    // Create database
+    // --------------------------------------------------------
+
+    await dbContext.Database.EnsureCreatedAsync();
+
+
+    // --------------------------------------------------------
+    // Create application roles
+    // --------------------------------------------------------
+
+    var roles = new[]
+    {
+        "Admin",
+        "Reviewer",
+        "Manager",
+        "Finance",
+        "Viewer"
+    };
+
+    foreach (var role in roles)
+    {
+        if (!await roleManager.RoleExistsAsync(role))
+        {
+            var result =
+                await roleManager.CreateAsync(
+                    new IdentityRole(role));
+
+            if (!result.Succeeded)
+            {
+                var errors = string.Join(
+                    ", ",
+                    result.Errors.Select(e => e.Description));
+
+                throw new InvalidOperationException(
+                    $"Could not create role '{role}': {errors}");
+            }
+        }
+    }
+
+
+    // ========================================================
+    // DEFAULT ADMINISTRATOR
+    // ========================================================
+
+    const string adminEmail = "admin@test.com";
+    const string adminPassword = "Admin@12345";
+
+    var adminUser =
+        await userManager.FindByEmailAsync(adminEmail);
+
+
+    // --------------------------------------------------------
+    // Create admin if it doesn't exist
+    // --------------------------------------------------------
+
+    if (adminUser == null)
+    {
+        adminUser = new ApplicationUser
+        {
+            UserName = adminEmail,
+            Email = adminEmail,
+            EmailConfirmed = true,
+            FullName = "System Administrator"
+        };
+
+        var createResult =
+            await userManager.CreateAsync(
+                adminUser,
+                adminPassword);
+
+        if (!createResult.Succeeded)
+        {
+            var errors = string.Join(
+                ", ",
+                createResult.Errors.Select(e => e.Description));
+
+            throw new InvalidOperationException(
+                $"Could not create default administrator: {errors}");
+        }
+
+        Console.WriteLine(
+            "Default administrator created.");
+    }
+    else
+    {
+        // ----------------------------------------------------
+        // Make sure existing admin can log in with the
+        // known development password.
+        // ----------------------------------------------------
+
+        var passwordValid =
+            await userManager.CheckPasswordAsync(
+                adminUser,
+                adminPassword);
+
+        if (!passwordValid)
+        {
+            var token =
+                await userManager.GeneratePasswordResetTokenAsync(
+                    adminUser);
+
+            var resetResult =
+                await userManager.ResetPasswordAsync(
+                    adminUser,
+                    token,
+                    adminPassword);
+
+            if (!resetResult.Succeeded)
+            {
+                var errors = string.Join(
+                    ", ",
+                    resetResult.Errors.Select(e => e.Description));
+
+                throw new InvalidOperationException(
+                    $"Could not reset administrator password: {errors}");
+            }
+
+            Console.WriteLine(
+                "Administrator password reset.");
+        }
+    }
+
+
+    // --------------------------------------------------------
+    // Make sure email is confirmed
+    // --------------------------------------------------------
+
+    if (!adminUser.EmailConfirmed)
+    {
+        adminUser.EmailConfirmed = true;
+
+        var updateResult =
+            await userManager.UpdateAsync(adminUser);
+
+        if (!updateResult.Succeeded)
+        {
+            var errors = string.Join(
+                ", ",
+                updateResult.Errors.Select(e => e.Description));
+
+            throw new InvalidOperationException(
+                $"Could not update administrator: {errors}");
+        }
+    }
+
+
+    // --------------------------------------------------------
+    // Make sure admin has Admin role
+    // --------------------------------------------------------
+
+    if (!await userManager.IsInRoleAsync(
+        adminUser,
+        "Admin"))
+    {
+        var roleResult =
+            await userManager.AddToRoleAsync(
+                adminUser,
+                "Admin");
+
+        if (!roleResult.Succeeded)
+        {
+            var errors = string.Join(
+                ", ",
+                roleResult.Errors.Select(e => e.Description));
+
+            throw new InvalidOperationException(
+                $"Could not assign Admin role: {errors}");
+        }
+    }
+
+    Console.WriteLine(
+        "==============================================");
+
+    Console.WriteLine(
+        "Default Admin Login:");
+
+    Console.WriteLine(
+        $"Email: {adminEmail}");
+
+    Console.WriteLine(
+        $"Password: {adminPassword}");
+
+    Console.WriteLine(
+        "Role: Admin");
+
+    Console.WriteLine(
+        "==============================================");
+}
+
+
+// ============================================================
+// HTTP REQUEST PIPELINE
+// ============================================================
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint(
+            "/swagger/v1/swagger.json",
+            "Document Management API v1");
+
+        options.RoutePrefix = "swagger";
+    });
+}
+
+app.UseHttpsRedirection();
+
+
+// Authentication MUST come before Authorization.
+app.UseAuthentication();
+
+app.UseAuthorization();
+
+app.MapControllers();
+
+app.Run();

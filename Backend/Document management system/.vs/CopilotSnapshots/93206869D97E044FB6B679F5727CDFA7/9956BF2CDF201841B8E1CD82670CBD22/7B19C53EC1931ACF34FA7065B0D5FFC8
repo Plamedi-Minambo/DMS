@@ -1,0 +1,25 @@
+﻿using System.Reflection.Metadata;
+
+namespace DocumentManagement.API.Models
+{
+    public class Approval
+    {
+        public int Id { get; set; }
+
+        public int DocumentId { get; set; }
+
+        public int Stage { get; set; }
+
+        public string Role { get; set; } = string.Empty;
+
+        public string Status { get; set; } = "Pending";
+
+        public string? Comments { get; set; }
+
+        public string? ApprovedById { get; set; }
+
+        public DateTime? ActionDate { get; set; }
+
+        public Document? Document { get; set; }
+    }
+}

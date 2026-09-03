@@ -1,0 +1,954 @@
+/* ========================================
+   APPROVAL WORKFLOW PAGE
+======================================== */
+
+.approval-page {
+	min-height: 100vh;
+	background: #f5f7fa;
+	color: #1f2937;
+}
+
+
+/* ========================================
+   SIDEBAR
+======================================== */
+
+.approval-sidebar {
+	position: fixed;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	width: 260px;
+	background: #26313b;
+	color: white;
+	display: flex;
+	flex-direction: column;
+	z-index: 1000;
+	box-sizing: border-box;
+}
+
+.sidebar-logo {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	padding: 24px 20px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+	.sidebar-logo h2 {
+		margin: 0;
+		color: white;
+		font-size: 15px;
+		font-weight: 600;
+	}
+
+	.sidebar-logo p {
+		margin: 4px 0 0;
+		color: #aeb8c2;
+		font-size: 12px;
+	}
+
+
+/* ========================================
+   NAVIGATION
+======================================== */
+
+.sidebar-navigation {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 20px 12px;
+}
+
+.nav-item {
+	width: 100%;
+	border: none;
+	background: transparent;
+	color: #cbd5df;
+	padding: 13px 15px;
+	border-radius: 9px;
+	text-align: left;
+	font-size: 14px;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	transition: all 0.2s ease;
+}
+
+	.nav-item:hover {
+		background: rgba(255, 255, 255, 0.07);
+		color: white;
+	}
+
+	.nav-item.active {
+		background: #00acc1;
+		color: white;
+		font-weight: 600;
+	}
+
+
+/* ========================================
+   LOGOUT
+======================================== */
+
+.logout-button {
+	margin: auto 12px 12px;
+	padding: 12px 15px;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 9px;
+	background: rgba(255, 255, 255, 0.04);
+	color: #d8dee5;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	font-size: 14px;
+	transition: all 0.2s ease;
+}
+
+	.logout-button:hover {
+		background: rgba(255, 255, 255, 0.09);
+		color: white;
+	}
+
+
+/* ========================================
+   MAIN CONTENT
+======================================== */
+
+.approval-content {
+	margin-left: 260px;
+	padding: 32px;
+	width: calc(100% - 260px);
+	box-sizing: border-box;
+}
+
+
+/* ========================================
+   HEADER
+======================================== */
+
+.approval-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 20px;
+	margin-bottom: 24px;
+}
+
+	.approval-header h1 {
+		margin: 0;
+		font-size: 28px;
+		font-weight: 700;
+		color: #1f2937;
+	}
+
+	.approval-header p {
+		margin: 5px 0 0;
+		color: #6b7280;
+		font-size: 14px;
+	}
+
+
+/* ========================================
+   USER INFO
+======================================== */
+
+.user-info {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.user-avatar {
+	width: 38px;
+	height: 38px;
+	border-radius: 50%;
+	background: #00acc1;
+	color: white;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: 700;
+	font-size: 14px;
+	flex-shrink: 0;
+}
+
+.user-info strong {
+	display: block;
+	color: #1f2937;
+	font-size: 12px;
+}
+
+.user-info span {
+	display: block;
+	margin-top: 3px;
+	color: #9da9b5;
+	font-size: 11px;
+}
+
+
+/* ========================================
+   STATISTICS
+======================================== */
+
+.approval-statistics {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 16px;
+	margin-bottom: 25px;
+}
+
+.approval-stat-card {
+	background: white;
+	border: 1px solid #e4e8ec;
+	border-radius: 13px;
+	padding: 20px;
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+	transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+	.approval-stat-card:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 5px 15px rgba(15, 23, 42, 0.07);
+	}
+
+.approval-stat-icon {
+	width: 43px;
+	height: 43px;
+	flex-shrink: 0;
+	border-radius: 10px;
+	background: #e0f7fa;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 19px;
+}
+
+.approval-stat-card h3 {
+	margin: 0 0 5px;
+	color: #6b7280;
+	font-size: 12px;
+	font-weight: 400;
+}
+
+.approval-stat-card p {
+	margin: 0;
+	color: #1f2937;
+	font-size: 20px;
+	font-weight: 700;
+}
+
+
+/* ========================================
+   WORKFLOW INFORMATION
+======================================== */
+
+.workflow-information {
+	background: white;
+	border: 1px solid #e4e8ec;
+	border-radius: 13px;
+	padding: 22px;
+	margin-bottom: 18px;
+	box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+}
+
+	.workflow-information h2 {
+		margin: 0 0 20px;
+		color: #1f2937;
+		font-size: 17px;
+		font-weight: 700;
+	}
+
+.workflow-stages {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 15px;
+}
+
+.workflow-stage {
+	flex: 1;
+	max-width: 280px;
+	display: flex;
+	align-items: center;
+	gap: 13px;
+	padding: 16px;
+	border: 1px solid #e4e8ec;
+	border-radius: 10px;
+	background: #f8fafc;
+}
+
+.stage-number {
+	width: 42px;
+	height: 42px;
+	min-width: 42px;
+	border-radius: 10px;
+	background: #e0f7fa;
+	color: #008b9c;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: 700;
+	font-size: 16px;
+}
+
+.workflow-stage h3 {
+	margin: 0;
+	color: #1f2937;
+	font-size: 14px;
+}
+
+.workflow-stage p {
+	margin: 4px 0 0;
+	color: #6b7280;
+	font-size: 12px;
+}
+
+.workflow-arrow {
+	color: #9ca3af;
+	font-size: 20px;
+	font-weight: bold;
+}
+
+
+/* ========================================
+   DOCUMENT SECTION
+======================================== */
+
+.approval-documents {
+	background: white;
+	border: 1px solid #e4e8ec;
+	border-radius: 13px;
+	padding: 22px;
+	box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+}
+
+.section-heading {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 20px;
+}
+
+	.section-heading h2 {
+		margin: 0;
+		color: #1f2937;
+		font-size: 17px;
+		font-weight: 700;
+	}
+
+	.section-heading p {
+		margin: 5px 0 0;
+		color: #6b7280;
+		font-size: 12px;
+	}
+
+.refresh-button {
+	border: 1px solid #d7dde3;
+	background: white;
+	color: #374151;
+	padding: 11px 16px;
+	border-radius: 9px;
+	cursor: pointer;
+	font-size: 13px;
+	font-weight: 600;
+	transition: all 0.2s ease;
+}
+
+	.refresh-button:hover {
+		border-color: #00acc1;
+		color: #008b9c;
+		background: #f8feff;
+	}
+
+	.refresh-button:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+
+
+/* ========================================
+   DOCUMENT CARD
+======================================== */
+
+.approval-document-list {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.approval-document-card {
+	border: 1px solid #e4e8ec;
+	border-radius: 13px;
+	padding: 20px;
+	background: white;
+	transition: box-shadow 0.2s ease;
+}
+
+	.approval-document-card:hover {
+		box-shadow: 0 5px 15px rgba(15, 23, 42, 0.05);
+	}
+
+.document-card-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 20px;
+	margin-bottom: 18px;
+}
+
+	.document-card-header h3 {
+		margin: 0;
+		color: #1f2937;
+		font-size: 15px;
+		font-weight: 700;
+	}
+
+	.document-card-header p {
+		margin: 5px 0 0;
+		color: #6b7280;
+		font-size: 12px;
+	}
+
+
+/* ========================================
+   STATUS BADGES
+======================================== */
+
+.status-badge,
+.stage-status {
+	display: inline-block;
+	padding: 6px 11px;
+	border-radius: 20px;
+	font-size: 11px;
+	font-weight: 600;
+}
+
+.status-approved {
+	background: #dcfce7;
+	color: #166534;
+}
+
+.status-rejected {
+	background: #fee2e2;
+	color: #991b1b;
+}
+
+.status-pending {
+	background: #fef3c7;
+	color: #92400e;
+}
+
+
+/* ========================================
+   DOCUMENT DETAILS
+======================================== */
+
+.document-details {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 18px;
+	padding: 16px 0;
+	border-top: 1px solid #eef0f2;
+	border-bottom: 1px solid #eef0f2;
+}
+
+	.document-details div {
+		display: flex;
+		flex-direction: column;
+		gap: 5px;
+	}
+
+	.document-details span,
+	.modal-document-info span,
+	.modal-current-stage span {
+		color: #6b7280;
+		font-size: 11px;
+	}
+
+	.document-details strong {
+		color: #1f2937;
+		font-size: 13px;
+	}
+
+
+/* ========================================
+   APPROVAL STAGES
+======================================== */
+
+.approval-stages {
+	display: flex;
+	align-items: stretch;
+	gap: 10px;
+	margin-top: 18px;
+}
+
+.approval-stage {
+	flex: 1;
+	border: 1px solid #e4e8ec;
+	border-radius: 10px;
+	padding: 14px;
+	background: #f8fafc;
+}
+
+	.approval-stage.current-stage {
+		border-color: #00acc1;
+		background: #e0f7fa;
+	}
+
+.stage-top {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 10px;
+}
+
+.stage-circle {
+	width: 35px;
+	height: 35px;
+	min-width: 35px;
+	border-radius: 50%;
+	background: #e5e7eb;
+	color: #374151;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: 700;
+	font-size: 13px;
+}
+
+.current-stage .stage-circle {
+	background: #00acc1;
+	color: white;
+}
+
+.approval-stage h4 {
+	margin: 0;
+	color: #1f2937;
+	font-size: 13px;
+}
+
+.approval-stage .stage-top span {
+	display: block;
+	margin-top: 3px;
+	color: #9ca3af;
+	font-size: 10px;
+}
+
+.stage-connector {
+	display: flex;
+	align-items: center;
+	color: #9ca3af;
+	font-size: 18px;
+}
+
+
+/* ========================================
+   FOOTER
+======================================== */
+
+.document-card-footer {
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+	margin-top: 16px;
+}
+
+.approve-document-button {
+	border: none;
+	background: #00acc1;
+	color: white;
+	padding: 10px 18px;
+	border-radius: 9px;
+	cursor: pointer;
+	font-size: 13px;
+	font-weight: 600;
+	transition: background 0.2s ease;
+}
+
+	.approve-document-button:hover {
+		background: #008b9c;
+	}
+
+.workflow-message {
+	color: #6b7280;
+	font-size: 12px;
+	font-weight: 500;
+}
+
+
+/* ========================================
+   EMPTY STATE
+======================================== */
+
+.workflow-empty {
+	text-align: center;
+	padding: 55px 20px;
+}
+
+.empty-icon {
+	font-size: 42px;
+	margin-bottom: 12px;
+}
+
+.workflow-empty h3 {
+	margin: 0;
+	color: #1f2937;
+	font-size: 17px;
+}
+
+.workflow-empty p {
+	color: #6b7280;
+	margin: 7px 0 18px;
+	font-size: 12px;
+}
+
+.primary-button {
+	border: none;
+	background: #00acc1;
+	color: white;
+	padding: 12px 20px;
+	border-radius: 9px;
+	cursor: pointer;
+	font-weight: 600;
+	transition: background 0.2s ease;
+}
+
+	.primary-button:hover {
+		background: #008b9c;
+	}
+
+
+/* ========================================
+   ERROR / SUCCESS
+======================================== */
+
+.workflow-error,
+.workflow-success {
+	padding: 13px 16px;
+	border-radius: 9px;
+	margin-bottom: 18px;
+	font-size: 12px;
+}
+
+.workflow-error {
+	background: #fffafa;
+	color: #991b1b;
+	border: 1px solid #fee2e2;
+	border-left: 4px solid #dc2626;
+}
+
+.workflow-success {
+	background: #f0fdf4;
+	color: #166534;
+	border: 1px solid #dcfce7;
+	border-left: 4px solid #16a34a;
+}
+
+
+/* ========================================
+   MODAL
+======================================== */
+
+.approval-modal-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(15, 23, 42, 0.6);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 20px;
+	z-index: 1000;
+}
+
+.approval-modal {
+	width: 100%;
+	max-width: 600px;
+	max-height: 90vh;
+	overflow-y: auto;
+	background: white;
+	border-radius: 14px;
+	box-shadow: 0 20px 50px rgba(15, 23, 42, 0.2);
+}
+
+.modal-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	padding: 22px;
+	border-bottom: 1px solid #e4e8ec;
+}
+
+	.modal-header h2 {
+		margin: 0;
+		color: #1f2937;
+		font-size: 18px;
+	}
+
+	.modal-header p {
+		margin: 5px 0 0;
+		color: #6b7280;
+		font-size: 12px;
+	}
+
+.modal-close {
+	border: none;
+	background: transparent;
+	color: #6b7280;
+	font-size: 28px;
+	line-height: 1;
+	cursor: pointer;
+}
+
+	.modal-close:hover {
+		color: #1f2937;
+	}
+
+.modal-body {
+	padding: 22px;
+}
+
+.modal-document-info {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 14px;
+	margin-bottom: 18px;
+}
+
+	.modal-document-info div {
+		display: flex;
+		flex-direction: column;
+		gap: 5px;
+	}
+
+	.modal-document-info strong {
+		color: #1f2937;
+		font-size: 13px;
+	}
+
+.modal-current-stage {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 14px;
+	background: #e0f7fa;
+	border: 1px solid #d9eef1;
+	border-radius: 9px;
+	margin-bottom: 18px;
+}
+
+	.modal-current-stage strong {
+		color: #008b9c;
+	}
+
+.comments-section {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+	.comments-section label {
+		color: #374151;
+		font-size: 12px;
+		font-weight: 600;
+	}
+
+	.comments-section textarea {
+		width: 100%;
+		box-sizing: border-box;
+		resize: vertical;
+		border: 1px solid #d1d5db;
+		border-radius: 9px;
+		padding: 12px;
+		font-family: inherit;
+		font-size: 13px;
+		outline: none;
+		transition: border-color 0.2s ease, box-shadow 0.2s ease;
+	}
+
+		.comments-section textarea:focus {
+			border-color: #00acc1;
+			box-shadow: 0 0 0 2px rgba(0, 172, 193, 0.1);
+		}
+
+.modal-footer {
+	display: flex;
+	justify-content: flex-end;
+	gap: 10px;
+	padding: 18px 22px;
+	border-top: 1px solid #e4e8ec;
+}
+
+.reject-button,
+.approve-button {
+	border: none;
+	padding: 11px 20px;
+	border-radius: 9px;
+	cursor: pointer;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.reject-button {
+	background: #dc2626;
+	color: white;
+}
+
+	.reject-button:hover {
+		background: #b91c1c;
+	}
+
+.approve-button {
+	background: #16a34a;
+	color: white;
+}
+
+	.approve-button:hover {
+		background: #15803d;
+	}
+
+	.reject-button:disabled,
+	.approve-button:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+
+
+/* ========================================
+   RESPONSIVE - TABLET
+======================================== */
+
+@media (max-width: 1200px) {
+
+	.approval-statistics {
+		grid-template-columns: repeat(2, 1fr);
+	}
+
+	.document-details {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+
+/* ========================================
+   RESPONSIVE - SMALL TABLET
+======================================== */
+
+@media (max-width: 900px) {
+
+	.approval-sidebar {
+		width: 220px;
+	}
+
+	.approval-content {
+		margin-left: 220px;
+		width: calc(100% - 220px);
+		padding: 24px;
+	}
+
+	.workflow-stages {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.workflow-stage {
+		max-width: none;
+	}
+
+	.workflow-arrow {
+		transform: rotate(90deg);
+		text-align: center;
+	}
+
+	.approval-stages {
+		flex-direction: column;
+	}
+
+	.stage-connector {
+		justify-content: center;
+		transform: rotate(90deg);
+	}
+}
+
+
+/* ========================================
+   RESPONSIVE - MOBILE
+======================================== */
+
+@media (max-width: 700px) {
+
+	.approval-page {
+		display: block;
+	}
+
+	.approval-sidebar {
+		position: relative;
+		width: 100%;
+		min-height: auto;
+	}
+
+	.sidebar-navigation {
+		flex-direction: row;
+		overflow-x: auto;
+		padding: 12px;
+	}
+
+	.nav-item {
+		min-width: max-content;
+	}
+
+	.logout-button {
+		display: none;
+	}
+
+	.approval-content {
+		margin-left: 0;
+		width: 100%;
+		padding: 18px;
+	}
+
+	.approval-header {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	.approval-statistics {
+		grid-template-columns: 1fr;
+	}
+
+	.document-details {
+		grid-template-columns: 1fr;
+	}
+
+	.section-heading {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 15px;
+	}
+
+	.refresh-button {
+		width: 100%;
+	}
+
+	.document-card-header {
+		flex-direction: column;
+	}
+
+	.modal-document-info {
+		grid-template-columns: 1fr;
+	}
+
+	.modal-footer {
+		flex-direction: column;
+	}
+
+	.reject-button,
+	.approve-button {
+		width: 100%;
+	}
+}

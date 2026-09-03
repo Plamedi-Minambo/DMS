@@ -1,0 +1,233 @@
+﻿## SIGNATURES OF RELEVANT TYPES REFERENCED IN THE CODE:
+
+```csharp
+
+public abstract class DbSet<TEntity> where TEntity : class : IQueryable<TEntity>, IEnumerable<TEntity>, IQueryable, IEnumerable, IInfrastructure<IServiceProvider>, IListSource
+{
+  public virtual IAsyncEnumerable<TEntity> AsAsyncEnumerable();
+  public virtual IQueryable<TEntity> AsQueryable();
+  public virtual TEntity? Find(params object?[]? keyValues);
+  public virtual ValueTask<TEntity?> FindAsync(params object?[]? keyValues);
+  public virtual ValueTask<TEntity?> FindAsync(object?[]? keyValues, CancellationToken cancellationToken);
+  public virtual EntityEntry<TEntity> Add(TEntity entity);
+  public virtual ValueTask<EntityEntry<TEntity>> AddAsync(TEntity entity, [CancellationToken cancellationToken = default]);
+  public virtual EntityEntry<TEntity> Attach(TEntity entity);
+  public virtual EntityEntry<TEntity> Remove(TEntity entity);
+  public virtual EntityEntry<TEntity> Update(TEntity entity);
+  public virtual void AddRange(params TEntity[] entities);
+  public virtual Task AddRangeAsync(params TEntity[] entities);
+  public virtual void AttachRange(params TEntity[] entities);
+  public virtual void RemoveRange(params TEntity[] entities);
+  public virtual void UpdateRange(params TEntity[] entities);
+  public virtual void AddRange(IEnumerable<TEntity> entities);
+  public virtual Task AddRangeAsync(IEnumerable<TEntity> entities, [CancellationToken cancellationToken = default]);
+  public virtual void AttachRange(IEnumerable<TEntity> entities);
+  public virtual void RemoveRange(IEnumerable<TEntity> entities);
+  public virtual void UpdateRange(IEnumerable<TEntity> entities);
+  public virtual EntityEntry<TEntity> Entry(TEntity entity);
+  public virtual IAsyncEnumerator<TEntity> GetAsyncEnumerator([CancellationToken cancellationToken = default]);
+  public override string? ToString();
+  public override bool Equals(object? obj);
+  public override int GetHashCode();
+  public abstract IEntityType EntityType { get; }
+  public virtual LocalView<TEntity> Local { get; }
+}
+
+public interface IInfrastructure<T>
+{
+  T Instance { get; }
+}
+
+public class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IInfrastructure<IServiceProvider>, IDbContextDependencies, IDbSetCache, IDbContextPoolable, IResettableService, IDisposable, IAsyncDisposable
+{
+  public DbSet<Document> Documents { get; set; }
+  public DbSet<Approval> Approvals { get; set; }
+}
+
+public class ApplicationUser : IdentityUser
+{
+  public string FullName { get; set; }
+}
+
+public class IdentityDbContext<TUser> where TUser : IdentityUser : IdentityDbContext<TUser, IdentityRole, string>, IInfrastructure<IServiceProvider>, IDbContextDependencies, IDbSetCache, IDbContextPoolable, IResettableService, IDisposable, IAsyncDisposable
+{
+}
+
+public class IdentityRole : IdentityRole<string>
+{
+}
+
+public class IdentityDbContext<TUser, TRole, TKey> where TUser : IdentityUser<TKey> where TRole : IdentityRole<TKey> where TKey : IEquatable<TKey> : IdentityDbContext<TUser, TRole, TKey, IdentityUserClaim<TKey>, IdentityUserRole<TKey>, IdentityUserLogin<TKey>, IdentityRoleClaim<TKey>, IdentityUserToken<TKey>>, IInfrastructure<IServiceProvider>, IDbContextDependencies, IDbSetCache, IDbContextPoolable, IResettableService, IDisposable, IAsyncDisposable
+{
+}
+
+public class IdentityUserClaim<TKey> where TKey : IEquatable<TKey>
+{
+  public virtual Claim ToClaim();
+  public virtual void InitializeFromClaim(Claim claim);
+  public virtual int Id { get; set; }
+  public virtual TKey UserId { get; set; }
+  public virtual string? ClaimType { get; set; }
+  public virtual string? ClaimValue { get; set; }
+}
+
+public class IdentityUserRole<TKey> where TKey : IEquatable<TKey>
+{
+  public virtual TKey UserId { get; set; }
+  public virtual TKey RoleId { get; set; }
+}
+
+public class IdentityUserLogin<TKey> where TKey : IEquatable<TKey>
+{
+  public virtual string LoginProvider { get; set; }
+  public virtual string ProviderKey { get; set; }
+  public virtual string? ProviderDisplayName { get; set; }
+  public virtual TKey UserId { get; set; }
+}
+
+public class IdentityRoleClaim<TKey> where TKey : IEquatable<TKey>
+{
+  public virtual Claim ToClaim();
+  public virtual void InitializeFromClaim(Claim? other);
+  public virtual int Id { get; set; }
+  public virtual TKey RoleId { get; set; }
+  public virtual string? ClaimType { get; set; }
+  public virtual string? ClaimValue { get; set; }
+}
+
+public class IdentityUserToken<TKey> where TKey : IEquatable<TKey>
+{
+  public virtual TKey UserId { get; set; }
+  public virtual string LoginProvider { get; set; }
+  public virtual string Name { get; set; }
+  public virtual string? Value { get; set; }
+}
+
+public class IdentityDbContext<TUser, TRole, TKey, TUserClaim, TUserRole, TUserLogin, TRoleClaim, TUserToken> where TUser : IdentityUser<TKey> where TRole : IdentityRole<TKey> where TKey : IEquatable<TKey> where TUserClaim : IdentityUserClaim<TKey> where TUserRole : IdentityUserRole<TKey> where TUserLogin : IdentityUserLogin<TKey> where TRoleClaim : IdentityRoleClaim<TKey> where TUserToken : IdentityUserToken<TKey> : IdentityDbContext<TUser, TRole, TKey, TUserClaim, TUserRole, TUserLogin, TRoleClaim, TUserToken, IdentityUserPasskey<TKey>>, IInfrastructure<IServiceProvider>, IDbContextDependencies, IDbSetCache, IDbContextPoolable, IResettableService, IDisposable, IAsyncDisposable
+{
+}
+
+public class IdentityUserPasskey<TKey> where TKey : IEquatable<TKey>
+{
+  public virtual TKey UserId { get; set; }
+  public virtual byte[] CredentialId { get; set; }
+  public virtual IdentityPasskeyData Data { get; set; }
+}
+
+public abstract class IdentityDbContext<TUser, TRole, TKey, TUserClaim, TUserRole, TUserLogin, TRoleClaim, TUserToken, TUserPasskey> where TUser : IdentityUser<TKey> where TRole : IdentityRole<TKey> where TKey : IEquatable<TKey> where TUserClaim : IdentityUserClaim<TKey> where TUserRole : IdentityUserRole<TKey> where TUserLogin : IdentityUserLogin<TKey> where TRoleClaim : IdentityRoleClaim<TKey> where TUserToken : IdentityUserToken<TKey> where TUserPasskey : IdentityUserPasskey<TKey> : IdentityUserContext<TUser, TKey, TUserClaim, TUserLogin, TUserToken, TUserPasskey>, IInfrastructure<IServiceProvider>, IDbContextDependencies, IDbSetCache, IDbContextPoolable, IResettableService, IDisposable, IAsyncDisposable
+{
+  protected override void OnModelCreating(ModelBuilder builder);
+  internal override void OnModelCreatingVersion3(ModelBuilder builder);
+  internal override void OnModelCreatingVersion2(ModelBuilder builder);
+  internal override void OnModelCreatingVersion1(ModelBuilder builder);
+  public virtual DbSet<TUserRole> UserRoles { get; set; }
+  public virtual DbSet<TRole> Roles { get; set; }
+  public virtual DbSet<TRoleClaim> RoleClaims { get; set; }
+}
+
+public abstract class IdentityUserContext<TUser, TKey, TUserClaim, TUserLogin, TUserToken, TUserPasskey> where TUser : IdentityUser<TKey> where TKey : IEquatable<TKey> where TUserClaim : IdentityUserClaim<TKey> where TUserLogin : IdentityUserLogin<TKey> where TUserToken : IdentityUserToken<TKey> where TUserPasskey : IdentityUserPasskey<TKey> : DbContext, IInfrastructure<IServiceProvider>, IDbContextDependencies, IDbSetCache, IDbContextPoolable, IResettableService, IDisposable, IAsyncDisposable
+{
+  protected override void OnModelCreating(ModelBuilder builder);
+  internal virtual void OnModelCreatingVersion(ModelBuilder builder, Version schemaVersion);
+  internal virtual void OnModelCreatingVersion3(ModelBuilder builder);
+  internal virtual void OnModelCreatingVersion2(ModelBuilder builder);
+  internal virtual void OnModelCreatingVersion1(ModelBuilder builder);
+  public virtual DbSet<TUser> Users { get; set; }
+  public virtual DbSet<TUserClaim> UserClaims { get; set; }
+  public virtual DbSet<TUserLogin> UserLogins { get; set; }
+  public virtual DbSet<TUserToken> UserTokens { get; set; }
+  public virtual DbSet<TUserPasskey> UserPasskeys { get; set; }
+  protected virtual Version SchemaVersion { get; }
+  private sealed class PersonalDataConverter : ValueConverter<string, string>
+  {
+  }
+}
+
+public class DbContext : IInfrastructure<IServiceProvider>, IDbContextDependencies, IDbSetCache, IDbContextPoolable, IResettableService, IDisposable, IAsyncDisposable
+{
+  public virtual DbSet<TEntity> Set<TEntity>() where TEntity : class;
+  public virtual DbSet<TEntity> Set<TEntity>(string name) where TEntity : class;
+  protected internal virtual void OnConfiguring(DbContextOptionsBuilder optionsBuilder);
+  protected internal virtual void ConfigureConventions(ModelConfigurationBuilder configurationBuilder);
+  protected internal virtual void OnModelCreating(ModelBuilder modelBuilder);
+  public virtual int SaveChanges();
+  public virtual int SaveChanges(bool acceptAllChangesOnSuccess);
+  public virtual Task<int> SaveChangesAsync([CancellationToken cancellationToken = default]);
+  public virtual Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, [CancellationToken cancellationToken = default]);
+  public virtual void Dispose();
+  public virtual ValueTask DisposeAsync();
+  public virtual EntityEntry<TEntity> Entry<TEntity>(TEntity entity) where TEntity : class;
+  public virtual EntityEntry Entry(object entity);
+  public virtual EntityEntry<TEntity> Add<TEntity>(TEntity entity) where TEntity : class;
+  public virtual ValueTask<EntityEntry<TEntity>> AddAsync<TEntity>(TEntity entity, [CancellationToken cancellationToken = default]) where TEntity : class;
+  public virtual EntityEntry<TEntity> Attach<TEntity>(TEntity entity) where TEntity : class;
+  public virtual EntityEntry<TEntity> Update<TEntity>(TEntity entity) where TEntity : class;
+  public virtual EntityEntry<TEntity> Remove<TEntity>(TEntity entity) where TEntity : class;
+  public virtual EntityEntry Add(object entity);
+  public virtual ValueTask<EntityEntry> AddAsync(object entity, [CancellationToken cancellationToken = default]);
+  public virtual EntityEntry Attach(object entity);
+  public virtual EntityEntry Update(object entity);
+  public virtual EntityEntry Remove(object entity);
+  public virtual void AddRange(params object[] entities);
+  public virtual Task AddRangeAsync(params object[] entities);
+  public virtual void AttachRange(params object[] entities);
+  public virtual void UpdateRange(params object[] entities);
+  public virtual void RemoveRange(params object[] entities);
+  public virtual void AddRange(IEnumerable<object> entities);
+  public virtual Task AddRangeAsync(IEnumerable<object> entities, [CancellationToken cancellationToken = default]);
+  public virtual void AttachRange(IEnumerable<object> entities);
+  public virtual void UpdateRange(IEnumerable<object> entities);
+  public virtual void RemoveRange(IEnumerable<object> entities);
+  public virtual object? Find(Type entityType, params object?[]? keyValues);
+  public virtual ValueTask<object?> FindAsync(Type entityType, params object?[]? keyValues);
+  public virtual ValueTask<object?> FindAsync(Type entityType, object?[]? keyValues, CancellationToken cancellationToken);
+  public virtual TEntity? Find<TEntity>(params object?[]? keyValues) where TEntity : class;
+  public virtual ValueTask<TEntity?> FindAsync<TEntity>(params object?[]? keyValues) where TEntity : class;
+  public virtual ValueTask<TEntity?> FindAsync<TEntity>(object?[]? keyValues, CancellationToken cancellationToken) where TEntity : class;
+  public virtual IQueryable<TResult> FromExpression<TResult>(Expression<Func<IQueryable<TResult>>> expression);
+  public override string? ToString();
+  public override bool Equals(object? obj);
+  public override int GetHashCode();
+  public virtual DatabaseFacade Database { get; }
+  public virtual ChangeTracker ChangeTracker { get; }
+  public virtual IModel Model { get; }
+  public virtual DbContextId ContextId { get; }
+  public event EventHandler<SavingChangesEventArgs>? SavingChanges;
+  public event EventHandler<SavedChangesEventArgs>? SavedChanges;
+  public event EventHandler<SaveChangesFailedEventArgs>? SaveChangesFailed;
+}
+
+public interface IDbContextDependencies
+{
+  IDbSetSource SetSource { get; }
+  IEntityFinderFactory EntityFinderFactory { get; }
+  IAsyncQueryProvider QueryProvider { get; }
+  IStateManager StateManager { get; }
+  IChangeDetector ChangeDetector { get; }
+  IEntityGraphAttacher EntityGraphAttacher { get; }
+  IExceptionDetector ExceptionDetector { get; }
+  IDiagnosticsLogger<DbLoggerCategory.Update> UpdateLogger { get; }
+  IDiagnosticsLogger<DbLoggerCategory.Infrastructure> InfrastructureLogger { get; }
+}
+
+public interface IDbSetCache
+{
+  object GetOrAddSet(IDbSetSource source, Type type);
+  object GetOrAddSet(IDbSetSource source, string entityTypeName, Type type);
+  IEnumerable<object> GetSets();
+}
+
+public interface IDbContextPoolable : IResettableService, IDisposable, IAsyncDisposable
+{
+  void SetLease(DbContextLease lease);
+  Task SetLeaseAsync(DbContextLease lease, CancellationToken cancellationToken);
+  void ClearLease();
+  void SnapshotConfiguration();
+}
+
+public interface IResettableService
+{
+  void ResetState();
+  Task ResetStateAsync([CancellationToken cancellationToken = default]);
+}
+```
