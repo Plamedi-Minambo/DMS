@@ -474,19 +474,17 @@ function Documents() {
                     fileBlob
                 );
 
-            const link =
-                document.createElement("a");
+            // Open the document directly in a new browser tab.
+            // This allows the browser's built-in PDF/image viewer
+            // to display the document instead of downloading it.
+            window.open(
+                url,
+                "_blank",
+                "noopener,noreferrer"
+            );
 
-            link.href = url;
-            link.target = "_blank";
-            link.rel = "noopener noreferrer";
-
-            document.body.appendChild(link);
-
-            link.click();
-
-            link.remove();
-
+            // Give the new tab time to load the Blob URL
+            // before releasing it.
             setTimeout(() => {
                 window.URL.revokeObjectURL(url);
             }, 60000);
@@ -515,7 +513,6 @@ function Documents() {
             );
         }
     };
-
     // ========================================
     // DOWNLOAD DOCUMENT
     // ========================================
