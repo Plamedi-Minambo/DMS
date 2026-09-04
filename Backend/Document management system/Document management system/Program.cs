@@ -1,3 +1,4 @@
+
 using DocumentManagement.API.Data;
 using DocumentManagement.API.Models;
 using DocumentManagement.API.Services;
@@ -130,9 +131,9 @@ builder.Services.AddCors(options =>
     options.AddPolicy("ReactFrontend", policy =>
     {
         policy
-           .WithOrigins(
-    "https://agent-6a9a5b4b0da04ca217269067--plamedi-dms-2026.netlify.app",
-    "https://plamedi-dms-2026.netlify.app")
+            .WithOrigins(
+                "https://agent-6a9a5b4b0da04ca217269067--plamedi-dms-2026.netlify.app",
+                "https://plamedi-dms-2026.netlify.app")
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -145,6 +146,7 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddScoped<PdfTextExtractionService>();
 builder.Services.AddScoped<InvoiceExtractionService>();
+builder.Services.AddScoped<DocumentContentExtractionService>();
 
 
 // ============================================================
@@ -536,16 +538,18 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-// ============================================================
-// APPLICATION SERVICES
-// ============================================================
 
-builder.Services.AddScoped<PdfTextExtractionService>();
-builder.Services.AddScoped<InvoiceExtractionService>();
-builder.Services.AddScoped<DocumentContentExtractionService>();
+// ============================================================
+// QUESTPDF
+// ============================================================
 
 QuestPDF.Settings.License = LicenseType.Community;
-// Allow React frontend to communicate with the API.
+
+
+// ============================================================
+// CORS + AUTHENTICATION + AUTHORIZATION
+// ============================================================
+
 app.UseCors("ReactFrontend");
 
 app.UseAuthentication();
@@ -555,3 +559,4 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+

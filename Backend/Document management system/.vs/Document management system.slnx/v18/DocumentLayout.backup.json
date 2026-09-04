@@ -3,16 +3,16 @@
   "WorkspaceRootPath": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|c:\\users\\admin\\source\\repos\\document management system\\backend\\document management system\\document management system\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|solutionrelative:document management system\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|c:\\users\\admin\\source\\repos\\document management system\\backend\\document management system\\document management system\\services\\invoiceextractionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|solutionrelative:document management system\\services\\invoiceextractionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|c:\\users\\admin\\source\\repos\\document management system\\backend\\document management system\\document management system\\controllers\\documentscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|solutionrelative:document management system\\controllers\\documentscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|c:\\users\\admin\\source\\repos\\document management system\\backend\\document management system\\document management system\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|solutionrelative:document management system\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|c:\\users\\admin\\source\\repos\\document management system\\backend\\document management system\\document management system\\services\\documentcontentextractionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -132,7 +132,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 5,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Document",
@@ -144,8 +144,7 @@
               "RelativeToolTip": "Document management system\\Services\\DocumentContentExtractionService.cs",
               "ViewState": "AgIAAFEAAAAAAAAAAAAuwHsAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-09-04T13:05:41.561Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-09-04T13:05:41.561Z"
             },
             {
               "$type": "Document",
@@ -161,7 +160,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "DocumentsController.cs",
               "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Controllers\\DocumentsController.cs",
               "RelativeDocumentMoniker": "Document management system\\Controllers\\DocumentsController.cs",
@@ -169,18 +168,17 @@
               "RelativeToolTip": "Document management system\\Controllers\\DocumentsController.cs",
               "ViewState": "AgIAANQCAAAAAAAAAAAswOwCAAAvAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-09-03T03:56:50.376Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-09-03T03:56:50.376Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 0,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Program.cs",
               "RelativeDocumentMoniker": "Document management system\\Program.cs",
               "ToolTip": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Program.cs",
               "RelativeToolTip": "Document management system\\Program.cs",
-              "ViewState": "AgIAABYCAAAAAAAAAAAAACwCAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAsCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-09-02T16:52:14.236Z",
               "EditorCaption": ""
@@ -199,13 +197,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "InvoiceExtractionService.cs",
               "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Services\\InvoiceExtractionService.cs",
               "RelativeDocumentMoniker": "Document management system\\Services\\InvoiceExtractionService.cs",
               "ToolTip": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Services\\InvoiceExtractionService.cs",
               "RelativeToolTip": "Document management system\\Services\\InvoiceExtractionService.cs",
-              "ViewState": "AgIAAKoBAAAAAAAAAAA/wMMBAAAkAAAAAAAAAA==",
+              "ViewState": "AgIAAKsBAAAAAAAAAAAswMMBAAAkAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-09-03T11:01:52.405Z",
               "EditorCaption": ""
