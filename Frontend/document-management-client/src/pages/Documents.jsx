@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -29,6 +28,13 @@ function Documents() {
 
     const [uploadError, setUploadError] = useState("");
     const [uploadSuccess, setUploadSuccess] = useState("");
+
+    // ========================================
+    // EXTRACTION CONFIRMATION POPUP
+    // ========================================
+
+    const [extractionPopup, setExtractionPopup] =
+        useState(null);
 
     // ========================================
     // AUTHORIZATION POPUP
@@ -106,6 +112,17 @@ function Documents() {
     };
 
     // ========================================
+    // CLOSE EXTRACTION POPUP
+    // ========================================
+
+    const closeExtractionPopup = () => {
+        setExtractionPopup(null);
+        setUploadSuccess(
+            "Document uploaded and extracted successfully."
+        );
+    };
+
+    // ========================================
     // UPLOAD DOCUMENT
     // ========================================
 
@@ -124,6 +141,9 @@ function Documents() {
 
         try {
             setUploading(true);
+
+            const uploadedFileName =
+                selectedFile.name;
 
             const formData = new FormData();
 
@@ -148,10 +168,94 @@ function Documents() {
                 }
             );
 
-            setUploadSuccess(
-                response.data?.message ||
-                    "Document uploaded successfully."
+            // ========================================
+            // REFRESH DOCUMENT LIST
+            // ========================================
+
+            const documentsResponse =
+                await api.get("/Documents");
+
+            const updatedDocuments =
+                documentsResponse.data;
+
+            setDocuments(
+                updatedDocuments
             );
+
+            // ========================================
+            // FIND THE UPLOADED DOCUMENT
+            // ========================================
+
+            let uploadedDocument = null;
+
+            const returnedDocument =
+                response.data;
+
+            if (
+                returnedDocument?.id
+            ) {
+                uploadedDocument =
+                    updatedDocuments.find(
+                        (document) =>
+                            document.id ===
+                            returnedDocument.id
+                    );
+            }
+
+            if (
+                !uploadedDocument &&
+                returnedDocument?.documentId
+            ) {
+                uploadedDocument =
+                    updatedDocuments.find(
+                        (document) =>
+                            document.id ===
+                            returnedDocument.documentId
+                    );
+            }
+
+            // Fallback: find the newest document
+            // matching the uploaded filename.
+            if (!uploadedDocument) {
+                const matchingDocuments =
+                    updatedDocuments
+                        .filter(
+                            (document) =>
+                                document.fileName ===
+                                uploadedFileName
+                        )
+                        .sort(
+                            (a, b) =>
+                                new Date(
+                                    b.uploadedAt
+                                ) -
+                                new Date(
+                                    a.uploadedAt
+                                )
+                        );
+
+                uploadedDocument =
+                    matchingDocuments[0];
+            }
+
+            // ========================================
+            // SHOW EXTRACTION POPUP
+            // ========================================
+
+            if (uploadedDocument) {
+                setExtractionPopup(
+                    uploadedDocument
+                );
+            } else {
+                setUploadSuccess(
+                    response.data?.message ||
+                    "Document uploaded successfully."
+                );
+            }
+
+            // ========================================
+            // CLEAR FORM
+            // ========================================
 
             setSelectedFile(null);
             setDescription("");
@@ -165,12 +269,6 @@ function Documents() {
                 fileInput.value = "";
             }
 
-            const documentsResponse =
-                await api.get("/Documents");
-
-            setDocuments(
-                documentsResponse.data
-            );
         } catch (error) {
             console.error(
                 "Upload error:",
@@ -192,7 +290,7 @@ function Documents() {
 
             setUploadError(
                 error.response?.data?.message ||
-                    "Failed to upload the document."
+                "Failed to upload the document."
             );
         } finally {
             setUploading(false);
@@ -288,8 +386,9 @@ function Documents() {
 
             const contentType =
                 response.headers[
-                    "content-type"
-                ] || "application/octet-stream";
+                "content-type"
+                ] ||
+                "application/octet-stream";
 
             const fileBlob = new Blob(
                 [response.data],
@@ -380,7 +479,7 @@ function Documents() {
 
             setUploadSuccess(
                 response.data?.message ||
-                    "Document deleted successfully."
+                "Document deleted successfully."
             );
         } catch (error) {
             console.error(
@@ -403,7 +502,7 @@ function Documents() {
 
             setUploadError(
                 error.response?.data?.message ||
-                    "Failed to delete the document."
+                "Failed to delete the document."
             );
         } finally {
             setDeletingId(null);
@@ -441,7 +540,7 @@ function Documents() {
 
         const i = Math.floor(
             Math.log(bytes) /
-                Math.log(1024)
+            Math.log(1024)
         );
 
         return (
@@ -515,10 +614,10 @@ function Documents() {
 
                 const matchesStatus =
                     statusFilter ===
-                        "All" ||
+                    "All" ||
                     document.status
                         ?.toLowerCase() ===
-                        statusFilter.toLowerCase();
+                    statusFilter.toLowerCase();
 
                 const matchesSearch =
                     !search ||
@@ -591,7 +690,7 @@ function Documents() {
 
     const getStatusClass = (status) => {
         switch (
-            status?.toLowerCase()
+        status?.toLowerCase()
         ) {
             case "approved":
                 return "status-approved";
@@ -615,7 +714,7 @@ function Documents() {
         status
     ) => {
         switch (
-            status?.toLowerCase()
+        status?.toLowerCase()
         ) {
             case "completed":
                 return "extraction-completed";
@@ -667,6 +766,276 @@ function Documents() {
                         >
                             OK
                         </button>
+
+                    </div>
+
+                </div>
+
+            )}
+
+            {/* ========================================
+                EXTRACTION CONFIRMATION POPUP
+            ======================================== */}
+
+            {extractionPopup && (
+
+                <div className="extraction-overlay">
+
+                    <div className="extraction-popup">
+
+                        {/* HEADER */}
+
+                        <div className="extraction-popup-header">
+
+                            <div className="extraction-success-icon">
+                                ✓
+                            </div>
+
+                            <div>
+                                <h2>
+                                    Document Extracted
+                                </h2>
+
+                                <p>
+                                    The document has been successfully processed.
+                                </p>
+                            </div>
+
+                        </div>
+
+                        {/* FILE INFORMATION */}
+
+                        <div className="extraction-file">
+
+                            <div className="extraction-file-icon">
+                                📄
+                            </div>
+
+                            <div>
+                                <strong>
+                                    {
+                                        extractionPopup.fileName
+                                    }
+                                </strong>
+
+                                <span>
+                                    {
+                                        extractionPopup.fileType ||
+                                        "Document"
+                                    }
+                                </span>
+                            </div>
+
+                        </div>
+
+                        {/* EXTRACTED INFORMATION */}
+
+                        <div className="extraction-content">
+
+                            <div className="extraction-section-title">
+                                <span>
+                                    ✨
+                                </span>
+
+                                Extracted Information
+                            </div>
+
+                            <p className="extraction-review-text">
+                                The following information was extracted from the document.
+                            </p>
+
+                            <div className="extraction-grid">
+
+                                <div className="extraction-field">
+
+                                    <span>
+                                        Document Type
+                                    </span>
+
+                                    <strong>
+                                        {
+                                            extractionPopup
+                                                .invoiceData
+                                                ?.documentType ||
+                                            "-"
+                                        }
+                                    </strong>
+
+                                </div>
+
+                                <div className="extraction-field">
+
+                                    <span>
+                                        Invoice Number
+                                    </span>
+
+                                    <strong>
+                                        {
+                                            extractionPopup
+                                                .invoiceData
+                                                ?.invoiceNumber ||
+                                            "-"
+                                        }
+                                    </strong>
+
+                                </div>
+
+                                <div className="extraction-field">
+
+                                    <span>
+                                        Vendor
+                                    </span>
+
+                                    <strong
+                                        title={
+                                            extractionPopup
+                                                .invoiceData
+                                                ?.vendor ||
+                                            ""
+                                        }
+                                    >
+                                        {
+                                            extractionPopup
+                                                .invoiceData
+                                                ?.vendor ||
+                                            "-"
+                                        }
+                                    </strong>
+
+                                </div>
+
+                                <div className="extraction-field">
+
+                                    <span>
+                                        Invoice Date
+                                    </span>
+
+                                    <strong>
+                                        {formatDate(
+                                            extractionPopup
+                                                .invoiceData
+                                                ?.invoiceDate
+                                        )}
+                                    </strong>
+
+                                </div>
+
+                                <div className="extraction-field">
+
+                                    <span>
+                                        Amount
+                                    </span>
+
+                                    <strong>
+                                        {formatMoney(
+                                            extractionPopup
+                                                .invoiceData
+                                                ?.amount
+                                        )}
+                                    </strong>
+
+                                </div>
+
+                                <div className="extraction-field">
+
+                                    <span>
+                                        VAT
+                                    </span>
+
+                                    <strong>
+                                        {formatMoney(
+                                            extractionPopup
+                                                .invoiceData
+                                                ?.vat
+                                        )}
+                                    </strong>
+
+                                </div>
+
+                            </div>
+
+                            {/* TOTAL */}
+
+                            <div className="extraction-total">
+
+                                <div>
+
+                                    <span>
+                                        Total Amount
+                                    </span>
+
+                                    <small>
+                                        Extracted document total
+                                    </small>
+
+                                </div>
+
+                                <strong>
+                                    {formatMoney(
+                                        extractionPopup
+                                            .invoiceData
+                                            ?.totalAmount
+                                    )}
+                                </strong>
+
+                            </div>
+
+                            {/* EXTRACTION STATUS */}
+
+                            <div className="extraction-complete">
+
+                                <span className="extraction-complete-icon">
+                                    ✓
+                                </span>
+
+                                <div>
+
+                                    <strong>
+                                        {
+                                            extractionPopup
+                                                .invoiceData
+                                                ?.extractionStatus ===
+                                                "Completed"
+                                                ? "Extraction Complete"
+                                                : "Extraction Status"
+                                        }
+                                    </strong>
+
+                                    <span>
+                                        {
+                                            extractionPopup
+                                                .invoiceData
+                                                ?.extractionStatus ||
+                                            "Pending"
+                                        }
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        {/* FOOTER */}
+
+                        <div className="extraction-popup-footer">
+
+                            <button
+                                type="button"
+                                className="extraction-confirm-button"
+                                onClick={
+                                    closeExtractionPopup
+                                }
+                            >
+                                Confirm & Continue
+
+                                <span>
+                                    →
+                                </span>
+
+                            </button>
+
+                        </div>
 
                     </div>
 
@@ -743,7 +1112,6 @@ function Documents() {
                         Reports
                     </button>
 
-                    {/* AI INSIGHTS */}
                     <button
                         type="button"
                         className="nav-item"
@@ -1128,7 +1496,7 @@ function Documents() {
                             type="button"
                             className={
                                 statusFilter ===
-                                "All"
+                                    "All"
                                     ? "active"
                                     : ""
                             }
@@ -1145,7 +1513,7 @@ function Documents() {
                             type="button"
                             className={
                                 statusFilter ===
-                                "Pending"
+                                    "Pending"
                                     ? "active"
                                     : ""
                             }
@@ -1162,7 +1530,7 @@ function Documents() {
                             type="button"
                             className={
                                 statusFilter ===
-                                "Approved"
+                                    "Approved"
                                     ? "active"
                                     : ""
                             }
@@ -1179,7 +1547,7 @@ function Documents() {
                             type="button"
                             className={
                                 statusFilter ===
-                                "Rejected"
+                                    "Rejected"
                                     ? "active"
                                     : ""
                             }
@@ -1590,7 +1958,7 @@ function Documents() {
                                                                     }
                                                                 >
                                                                     {deletingId ===
-                                                                    document.id
+                                                                        document.id
                                                                         ? "Deleting..."
                                                                         : "🗑 Delete"}
                                                                 </button>
@@ -1624,4 +1992,3 @@ function Documents() {
 }
 
 export default Documents;
-
