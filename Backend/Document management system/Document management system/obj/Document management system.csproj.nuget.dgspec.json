@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Admin\\source\\repos\\Document Management system\\backend\\Document management system\\Document management system\\Document management system.csproj": {}
+    "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Document management system.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Admin\\source\\repos\\Document Management system\\backend\\Document management system\\Document management system\\Document management system.csproj": {
+    "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Document management system.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Admin\\source\\repos\\Document Management system\\backend\\Document management system\\Document management system\\Document management system.csproj",
+        "projectUniqueName": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Document management system.csproj",
         "projectName": "Document management system",
-        "projectPath": "C:\\Users\\Admin\\source\\repos\\Document Management system\\backend\\Document management system\\Document management system\\Document management system.csproj",
+        "projectPath": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Document management system.csproj",
         "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Admin\\source\\repos\\Document Management system\\backend\\Document management system\\Document management system\\obj\\",
+        "outputPath": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

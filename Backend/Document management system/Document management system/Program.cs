@@ -260,6 +260,113 @@ using (var scope = app.Services.CreateScope())
         }
     }
 
+    // ========================================================
+    // DEMO TEST USERS
+    // ========================================================
+
+    var demoUsers = new[]
+    {
+        new
+        {
+            Email = "manager1@test.com",
+            Password = "M8#qT3@vN7!xR5$K",
+            FullName = "Demo Manager",
+            Role = "Manager"
+        },
+        new
+        {
+            Email = "reviewer@test.com",
+            Password = "N4@zT8!pQ6#Wm2$K",
+            FullName = "Demo Reviewer",
+            Role = "Reviewer"
+        },
+        new
+        {
+            Email = "finance1@test.com",
+            Password = "F7@xR2!mQ9#kT4$L",
+            FullName = "Demo Finance User",
+            Role = "Finance"
+        },
+        new
+        {
+            Email = "viewer1@test.com",
+            Password = "V9!kQ4#tL7@xM2$R",
+            FullName = "Demo Viewer",
+            Role = "Viewer"
+        }
+    };
+
+    foreach (var demoUserData in demoUsers)
+    {
+        var demoUser =
+            await userManager.FindByEmailAsync(
+                demoUserData.Email);
+
+        if (demoUser == null)
+        {
+            demoUser = new ApplicationUser
+            {
+                UserName = demoUserData.Email,
+                Email = demoUserData.Email,
+                EmailConfirmed = true,
+                FullName = demoUserData.FullName
+            };
+
+            var createResult =
+                await userManager.CreateAsync(
+                    demoUser,
+                    demoUserData.Password);
+
+            if (!createResult.Succeeded)
+            {
+                var errors = string.Join(
+                    ", ",
+                    createResult.Errors.Select(e => e.Description));
+
+                throw new InvalidOperationException(
+                    $"Could not create demo user '{demoUserData.Email}': {errors}");
+            }
+        }
+
+        var existingRoles =
+            await userManager.GetRolesAsync(demoUser);
+
+        if (existingRoles.Any())
+        {
+            var removeRolesResult =
+                await userManager.RemoveFromRolesAsync(
+                    demoUser,
+                    existingRoles);
+
+            if (!removeRolesResult.Succeeded)
+            {
+                var errors = string.Join(
+                    ", ",
+                    removeRolesResult.Errors.Select(e => e.Description));
+
+                throw new InvalidOperationException(
+                    $"Could not update roles for '{demoUserData.Email}': {errors}");
+            }
+        }
+
+        var addRoleResult =
+            await userManager.AddToRoleAsync(
+                demoUser,
+                demoUserData.Role);
+
+        if (!addRoleResult.Succeeded)
+        {
+            var errors = string.Join(
+                ", ",
+                addRoleResult.Errors.Select(e => e.Description));
+
+            throw new InvalidOperationException(
+                $"Could not assign role '{demoUserData.Role}' to '{demoUserData.Email}': {errors}");
+        }
+
+        Console.WriteLine(
+            $"Demo user ready: {demoUserData.Email} ({demoUserData.Role})");
+    }
 
     // ========================================================
     // DEFAULT ADMINISTRATOR
