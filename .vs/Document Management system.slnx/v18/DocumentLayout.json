@@ -32,7 +32,7 @@
               "RelativeDocumentMoniker": "Frontend\\document-management-client\\src\\services\\api.js",
               "ToolTip": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Frontend\\document-management-client\\src\\services\\api.js",
               "RelativeToolTip": "Frontend\\document-management-client\\src\\services\\api.js",
-              "ViewState": "AgIAAAsAAAAAAAAAAAAjwBUAAAATAAAAAAAAAA==",
+              "ViewState": "AgIAAAsAAAAAAAAAAAAjwBQAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
               "WhenOpened": "2026-09-04T08:43:50.613Z",
               "EditorCaption": ""
@@ -47,8 +47,7 @@
               "RelativeToolTip": "Backend\\Document management system\\Document management system\\Properties\\launchSettings.json",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAgAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-09-04T08:43:44.3Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-09-04T08:43:44.3Z"
             },
             {
               "$type": "Document",
@@ -60,8 +59,7 @@
               "RelativeToolTip": "Frontend\\document-management-client\\package.json",
               "ViewState": "AgIAAB0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-09-04T05:56:54.497Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-09-04T05:56:54.497Z"
             }
           ]
         }

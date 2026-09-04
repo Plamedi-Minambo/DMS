@@ -130,7 +130,9 @@ builder.Services.AddCors(options =>
     options.AddPolicy("ReactFrontend", policy =>
     {
         policy
-            .WithOrigins("https://agent-6a9a5b4b0da04ca217269067--plamedi-dms-2026.netlify.app")
+           .WithOrigins(
+    "https://agent-6a9a5b4b0da04ca217269067--plamedi-dms-2026.netlify.app",
+    "https://plamedi-dms-2026.netlify.app")
             .AllowAnyHeader()
             .AllowAnyMethod();
     });

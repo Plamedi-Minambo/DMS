@@ -3,6 +3,10 @@
   "WorkspaceRootPath": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|c:\\users\\admin\\source\\repos\\document management system\\backend\\document management system\\document management system\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|solutionrelative:document management system\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|c:\\users\\admin\\source\\repos\\document management system\\backend\\document management system\\document management system\\dockerfile||{8B382828-6202-11D1-8870-0000F87579D2}",
       "RelativeMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|solutionrelative:document management system\\dockerfile||{8B382828-6202-11D1-8870-0000F87579D2}"
     },
@@ -17,10 +21,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|c:\\users\\admin\\source\\repos\\document management system\\backend\\document management system\\document management system\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
       "RelativeMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|solutionrelative:document management system\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|c:\\users\\admin\\source\\repos\\document management system\\backend\\document management system\\document management system\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|solutionrelative:document management system\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{8F2DEB84-F11D-2258-F00A-607EC24C0962}|Document management system\\Document management system.csproj|c:\\users\\admin\\source\\repos\\document management system\\backend\\document management system\\document management system\\controllers\\approvalscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -128,24 +128,23 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "Document management system",
+              "DocumentIndex": 2,
+              "Title": "Document management system.csproj",
               "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Document Management system\\backend\\Document management system\\Document management system\\Document management system.csproj",
               "RelativeDocumentMoniker": "Document management system\\Document management system.csproj",
               "ToolTip": "C:\\Users\\Admin\\source\\repos\\Document Management system\\backend\\Document management system\\Document management system\\Document management system.csproj",
               "RelativeToolTip": "Document management system\\Document management system.csproj",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABkAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2026-09-04T06:58:42.95Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-09-04T06:58:42.95Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "Dockerfile",
               "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Dockerfile",
               "RelativeDocumentMoniker": "Document management system\\Dockerfile",
@@ -170,13 +169,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 0,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Program.cs",
               "RelativeDocumentMoniker": "Document management system\\Program.cs",
               "ToolTip": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Program.cs",
               "RelativeToolTip": "Document management system\\Program.cs",
-              "ViewState": "AgIAAI0BAAAAAAAAAAAswK4BAAA0AAAAAAAAAA==",
+              "ViewState": "AgIAAGQAAAAAAAAAAAAIwIsAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-09-02T16:52:14.236Z",
               "EditorCaption": ""
@@ -203,12 +202,11 @@
               "RelativeToolTip": "Document management system\\Controllers\\ApprovalsController.cs",
               "ViewState": "AgIAADEBAAAAAAAAAAAswEwBAAAoAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-09-03T15:45:33.705Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-09-03T15:45:33.705Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 4,
               "Title": "appsettings.json",
               "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\appsettings.json",
               "RelativeDocumentMoniker": "Document management system\\appsettings.json",
@@ -216,12 +214,11 @@
               "RelativeToolTip": "Document management system\\appsettings.json",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-09-02T16:50:10.876Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-09-02T16:50:10.876Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 3,
               "Title": "ApplicationDbContext.cs",
               "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\Document Management system\\Backend\\Document management system\\Document management system\\Data\\ApplicationDbContext.cs",
               "RelativeDocumentMoniker": "Document management system\\Data\\ApplicationDbContext.cs",
@@ -229,8 +226,7 @@
               "RelativeToolTip": "Document management system\\Data\\ApplicationDbContext.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABQAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-09-02T16:44:17.703Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-09-02T16:44:17.703Z"
             },
             {
               "$type": "Document",
