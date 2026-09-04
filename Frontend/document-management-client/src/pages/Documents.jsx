@@ -30,6 +30,13 @@ function Documents() {
     const [uploadSuccess, setUploadSuccess] = useState("");
 
     // ========================================
+    // UPLOAD DETAILS POPUP
+    // ========================================
+
+    const [uploadDetailsPopup, setUploadDetailsPopup] =
+        useState(false);
+
+    // ========================================
     // EXTRACTION CONFIRMATION POPUP
     // ========================================
 
@@ -112,6 +119,16 @@ function Documents() {
     };
 
     // ========================================
+    // CLOSE UPLOAD DETAILS POPUP
+    // ========================================
+
+    const closeUploadDetailsPopup = () => {
+        if (!uploading) {
+            setUploadDetailsPopup(false);
+        }
+    };
+
+    // ========================================
     // CLOSE EXTRACTION POPUP
     // ========================================
 
@@ -123,10 +140,10 @@ function Documents() {
     };
 
     // ========================================
-    // UPLOAD DOCUMENT
+    // OPEN UPLOAD DETAILS POPUP
     // ========================================
 
-    const handleUpload = async (event) => {
+    const handleUpload = (event) => {
         event.preventDefault();
 
         setUploadError("");
@@ -138,6 +155,20 @@ function Documents() {
             );
             return;
         }
+
+        setUploadDetailsPopup(true);
+    };
+
+    // ========================================
+    // CONFIRM UPLOAD DOCUMENT
+    // ========================================
+
+    const confirmUpload = async () => {
+        if (!selectedFile) {
+            return;
+        }
+
+        setUploadDetailsPopup(false);
 
         try {
             setUploading(true);
@@ -766,6 +797,208 @@ function Documents() {
                         >
                             OK
                         </button>
+
+                    </div>
+
+                </div>
+
+            )}
+
+            {/* ========================================
+                UPLOAD DETAILS POPUP
+            ======================================== */}
+
+            {uploadDetailsPopup && selectedFile && (
+
+                <div className="upload-details-overlay">
+
+                    <div
+                        className="upload-details-popup"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="upload-details-title"
+                    >
+
+                        {/* HEADER */}
+
+                        <div className="upload-details-header">
+
+                            <div className="upload-details-icon">
+                                📤
+                            </div>
+
+                            <div>
+                                <h2 id="upload-details-title">
+                                    Upload Document
+                                </h2>
+
+                                <p>
+                                    Review the document details before uploading.
+                                </p>
+                            </div>
+
+                        </div>
+
+                        {/* CONTENT */}
+
+                        <div className="upload-details-content">
+
+                            {/* FILE INFORMATION */}
+
+                            <div className="upload-details-file-card">
+
+                                <div className="upload-details-file-icon">
+                                    📄
+                                </div>
+
+                                <div className="upload-details-file-info">
+
+                                    <span className="upload-details-label">
+                                        File Name
+                                    </span>
+
+                                    <strong
+                                        title={selectedFile.name}
+                                    >
+                                        {selectedFile.name}
+                                    </strong>
+
+                                    <div className="upload-details-meta">
+
+                                        <span>
+                                            {
+                                                selectedFile.type ||
+                                                "Unknown file type"
+                                            }
+                                        </span>
+
+                                        <span>
+                                            {
+                                                formatFileSize(
+                                                    selectedFile.size
+                                                )
+                                            }
+                                        </span>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                            {/* DOCUMENT DETAILS */}
+
+                            <div className="upload-details-grid">
+
+                                <div className="upload-details-field">
+
+                                    <span>
+                                        Document Type
+                                    </span>
+
+                                    <strong>
+                                        {
+                                            selectedFile.type ||
+                                            "Unknown"
+                                        }
+                                    </strong>
+
+                                </div>
+
+                                <div className="upload-details-field">
+
+                                    <span>
+                                        File Size
+                                    </span>
+
+                                    <strong>
+                                        {
+                                            formatFileSize(
+                                                selectedFile.size
+                                            )
+                                        }
+                                    </strong>
+
+                                </div>
+
+                            </div>
+
+                            {/* DESCRIPTION */}
+
+                            <div className="upload-details-description">
+
+                                <span>
+                                    Description
+                                </span>
+
+                                <p>
+                                    {
+                                        description.trim()
+                                            ? description
+                                            : "No description provided."
+                                    }
+                                </p>
+
+                            </div>
+
+                            {/* READY MESSAGE */}
+
+                            <div className="upload-details-review">
+
+                                <div className="upload-details-review-icon">
+                                    ✓
+                                </div>
+
+                                <div>
+
+                                    <strong>
+                                        Ready to upload
+                                    </strong>
+
+                                    <span>
+                                        Please confirm that the details above are correct.
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        {/* FOOTER */}
+
+                        <div className="upload-details-footer">
+
+                            <button
+                                type="button"
+                                className="upload-details-cancel-button"
+                                onClick={
+                                    closeUploadDetailsPopup
+                                }
+                                disabled={uploading}
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                type="button"
+                                className="upload-details-confirm-button"
+                                onClick={
+                                    confirmUpload
+                                }
+                                disabled={uploading}
+                            >
+                                {uploading
+                                    ? "Uploading..."
+                                    : "Confirm Upload"}
+
+                                <span>
+                                    →
+                                </span>
+
+                            </button>
+
+                        </div>
 
                     </div>
 

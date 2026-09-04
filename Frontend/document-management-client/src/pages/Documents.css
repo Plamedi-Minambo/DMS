@@ -1058,170 +1058,634 @@
         opacity: 1;
         transform: scale(1);
     }
+}
 
-    /* ========================================
-   DOCUMENT EXTRACTION CONFIRMATION POPUP
+/* ========================================
+   UPLOAD DOCUMENT DETAILS POPUP
 ======================================== */
 
-    .extraction-overlay {
-        position: fixed;
-        inset: 0;
-        z-index: 10000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 24px;
-        background: rgba(15, 23, 42, 0.68);
-        backdrop-filter: blur(7px);
-        -webkit-backdrop-filter: blur(7px);
-        animation: extractionOverlayIn 0.2s ease-out;
-        box-sizing: border-box;
-    }
+.upload-details-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(15, 23, 42, 0.68);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    box-sizing: border-box;
+    animation: uploadDetailsOverlayIn 0.2s ease-out;
+}
 
-    .extraction-popup {
-        width: 100%;
-        max-width: 720px;
-        max-height: 90vh;
-        overflow-y: auto;
-        background: #ffffff;
-        border-radius: 20px;
-        box-shadow: 0 25px 70px rgba(15, 23, 42, 0.28), 0 8px 25px rgba(15, 23, 42, 0.12);
-        animation: extractionPopupIn 0.25s ease-out;
-        box-sizing: border-box;
-    }
-    /* ========================================
-   POPUP HEADER
+.upload-details-popup {
+    width: 100%;
+    max-width: 620px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: #ffffff;
+    border-radius: 18px;
+    box-shadow: 0 25px 70px rgba(15, 23, 42, 0.28), 0 8px 25px rgba(15, 23, 42, 0.12);
+    box-sizing: border-box;
+    animation: uploadDetailsPopupIn 0.25s ease-out;
+}
+
+/* ========================================
+   UPLOAD DETAILS HEADER
 ======================================== */
 
-    .extraction-popup-header {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        padding: 26px 30px;
-        border-bottom: 1px solid #e5e7eb;
+.upload-details-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 25px 28px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.upload-details-icon {
+    width: 50px;
+    height: 50px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    background: #eff6ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 23px;
+}
+
+.upload-details-header h2 {
+    margin: 0;
+    color: #111827;
+    font-size: 21px;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.upload-details-header p {
+    margin: 5px 0 0;
+    color: #6b7280;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* ========================================
+   UPLOAD DETAILS CONTENT
+======================================== */
+
+.upload-details-content {
+    padding: 25px 28px 26px;
+}
+
+/* ========================================
+   UPLOAD DETAILS FILE
+======================================== */
+
+.upload-details-file-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 11px;
+    margin-bottom: 18px;
+}
+
+.upload-details-file-icon {
+    width: 43px;
+    height: 43px;
+    flex-shrink: 0;
+    border-radius: 9px;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+
+.upload-details-file-info {
+    min-width: 0;
+    flex: 1;
+}
+
+.upload-details-label {
+    display: block;
+    margin-bottom: 5px;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.upload-details-file-info strong {
+    display: block;
+    color: #111827;
+    font-size: 14px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.upload-details-meta {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    margin-top: 6px;
+    color: #64748b;
+    font-size: 11px;
+}
+
+    .upload-details-meta span + span {
+        position: relative;
+        padding-left: 13px;
     }
 
-    .extraction-success-icon {
-        width: 52px;
-        height: 52px;
-        flex-shrink: 0;
-        border-radius: 50%;
-        background: #dcfce7;
-        color: #16a34a;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 27px;
-        font-weight: 700;
-        box-shadow: inset 0 0 0 1px #bbf7d0;
-    }
+        .upload-details-meta span + span::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 50%;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: #94a3b8;
+            transform: translateY(-50%);
+        }
 
-    .extraction-popup-header h2 {
-        margin: 0;
-        color: #111827;
-        font-size: 22px;
-        font-weight: 700;
-        line-height: 1.3;
-    }
+/* ========================================
+   UPLOAD DETAILS GRID
+======================================== */
 
-    .extraction-popup-header p {
-        margin: 5px 0 0;
+.upload-details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.upload-details-field {
+    min-width: 0;
+    padding: 14px 15px;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+}
+
+    .upload-details-field span {
+        display: block;
+        margin-bottom: 6px;
         color: #6b7280;
-        font-size: 13px;
-        line-height: 1.5;
-    }
-    /* ========================================
-   FILE INFORMATION
-======================================== */
-
-    .extraction-file {
-        display: flex;
-        align-items: center;
-        gap: 13px;
-        margin: 22px 30px 0;
-        padding: 14px 16px;
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 11px;
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
     }
 
-    .extraction-file-icon {
-        width: 40px;
-        height: 40px;
-        flex-shrink: 0;
-        border-radius: 9px;
-        background: #eff6ff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 19px;
-    }
-
-    .extraction-file div:last-child {
-        min-width: 0;
-    }
-
-    .extraction-file strong {
+    .upload-details-field strong {
         display: block;
         color: #111827;
         font-size: 13px;
         font-weight: 600;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        word-break: break-word;
     }
 
-    .extraction-file span {
+/* ========================================
+   UPLOAD DETAILS DESCRIPTION
+======================================== */
+
+.upload-details-description {
+    padding: 14px 15px;
+    margin-bottom: 14px;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+}
+
+    .upload-details-description > span {
         display: block;
-        margin-top: 3px;
+        margin-bottom: 6px;
         color: #6b7280;
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .upload-details-description p {
+        margin: 0;
+        color: #374151;
+        font-size: 13px;
+        line-height: 1.6;
+        word-break: break-word;
+    }
+
+/* ========================================
+   UPLOAD DETAILS REVIEW
+======================================== */
+
+.upload-details-review {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    padding: 13px 14px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 10px;
+}
+
+.upload-details-review-icon {
+    width: 27px;
+    height: 27px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: #22c55e;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.upload-details-review strong {
+    display: block;
+    margin-bottom: 3px;
+    color: #166534;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.upload-details-review span {
+    display: block;
+    color: #15803d;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+/* ========================================
+   UPLOAD DETAILS FOOTER
+======================================== */
+
+.upload-details-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    padding: 18px 28px 22px;
+    border-top: 1px solid #e5e7eb;
+    background: #f8fafc;
+    border-radius: 0 0 18px 18px;
+}
+
+.upload-details-cancel-button,
+.upload-details-confirm-button {
+    min-height: 42px;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.upload-details-cancel-button {
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    color: #374151;
+}
+
+    .upload-details-cancel-button:hover {
+        background: #f3f4f6;
+    }
+
+.upload-details-confirm-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    border: 1px solid #2563eb;
+    background: #2563eb;
+    color: #ffffff;
+}
+
+    .upload-details-confirm-button:hover {
+        background: #1d4ed8;
+        border-color: #1d4ed8;
+        transform: translateY(-1px);
+        box-shadow: 0 5px 14px rgba(37, 99, 235, 0.25);
+    }
+
+    .upload-details-confirm-button:active {
+        transform: translateY(0);
+    }
+
+    .upload-details-confirm-button span {
+        font-size: 16px;
+        line-height: 1;
+    }
+
+    .upload-details-cancel-button:disabled,
+    .upload-details-confirm-button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+
+/* ========================================
+   UPLOAD DETAILS SCROLLBAR
+======================================== */
+
+.upload-details-popup::-webkit-scrollbar {
+    width: 7px;
+}
+
+.upload-details-popup::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.upload-details-popup::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+    .upload-details-popup::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+
+/* ========================================
+   UPLOAD DETAILS ANIMATIONS
+======================================== */
+
+@keyframes uploadDetailsOverlayIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes uploadDetailsPopupIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* ========================================
+   UPLOAD DETAILS POPUP - MOBILE
+======================================== */
+
+@media (max-width: 700px) {
+    .upload-details-overlay {
+        padding: 16px;
+    }
+
+    .upload-details-popup {
+        max-height: 92vh;
+        border-radius: 16px;
+    }
+
+    .upload-details-header {
+        padding: 22px;
+    }
+
+    .upload-details-content {
+        padding: 21px 22px 22px;
+    }
+
+    .upload-details-footer {
+        padding: 16px 22px 20px;
+    }
+}
+
+@media (max-width: 500px) {
+    .upload-details-overlay {
+        padding: 10px;
+    }
+
+    .upload-details-popup {
+        border-radius: 14px;
+    }
+
+    .upload-details-header {
+        padding: 19px;
+        gap: 11px;
+    }
+
+    .upload-details-icon {
+        width: 44px;
+        height: 44px;
+        font-size: 20px;
+    }
+
+    .upload-details-header h2 {
+        font-size: 18px;
+    }
+
+    .upload-details-header p {
         font-size: 11px;
     }
-    /* ========================================
+
+    .upload-details-content {
+        padding: 18px 19px 20px;
+    }
+
+    .upload-details-grid {
+        grid-template-columns: 1fr;
+        gap: 9px;
+    }
+
+    .upload-details-footer {
+        flex-direction: column-reverse;
+        padding: 15px 19px 18px;
+    }
+
+    .upload-details-cancel-button,
+    .upload-details-confirm-button {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* ========================================
+   DOCUMENT EXTRACTION CONFIRMATION POPUP
+======================================== */
+
+.extraction-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(15, 23, 42, 0.68);
+    backdrop-filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px);
+    animation: extractionOverlayIn 0.2s ease-out;
+    box-sizing: border-box;
+}
+
+.extraction-popup {
+    width: 100%;
+    max-width: 720px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 25px 70px rgba(15, 23, 42, 0.28), 0 8px 25px rgba(15, 23, 42, 0.12);
+    animation: extractionPopupIn 0.25s ease-out;
+    box-sizing: border-box;
+}
+
+/* ========================================
+   POPUP HEADER
+======================================== */
+
+.extraction-popup-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 26px 30px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.extraction-success-icon {
+    width: 52px;
+    height: 52px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: #dcfce7;
+    color: #16a34a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 27px;
+    font-weight: 700;
+    box-shadow: inset 0 0 0 1px #bbf7d0;
+}
+
+.extraction-popup-header h2 {
+    margin: 0;
+    color: #111827;
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.extraction-popup-header p {
+    margin: 5px 0 0;
+    color: #6b7280;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* ========================================
+   FILE INFORMATION
+======================================== */
+
+.extraction-file {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    margin: 22px 30px 0;
+    padding: 14px 16px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 11px;
+}
+
+.extraction-file-icon {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 9px;
+    background: #eff6ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 19px;
+}
+
+.extraction-file div:last-child {
+    min-width: 0;
+}
+
+.extraction-file strong {
+    display: block;
+    color: #111827;
+    font-size: 13px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.extraction-file span {
+    display: block;
+    margin-top: 3px;
+    color: #6b7280;
+    font-size: 11px;
+}
+
+/* ========================================
    EXTRACTION CONTENT
 ======================================== */
 
-    .extraction-content {
-        padding: 24px 30px 26px;
-    }
+.extraction-content {
+    padding: 24px 30px 26px;
+}
 
-    .extraction-section-title {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        color: #111827;
-        font-size: 15px;
-        font-weight: 700;
-    }
+.extraction-section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #111827;
+    font-size: 15px;
+    font-weight: 700;
+}
 
     .extraction-section-title span {
         font-size: 17px;
     }
 
-    .extraction-review-text {
-        margin: 7px 0 18px;
-        color: #6b7280;
-        font-size: 12px;
-        line-height: 1.5;
-    }
-    /* ========================================
+.extraction-review-text {
+    margin: 7px 0 18px;
+    color: #6b7280;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+/* ========================================
    EXTRACTION GRID
 ======================================== */
 
-    .extraction-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
-    }
+.extraction-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
 
-    .extraction-field {
-        min-width: 0;
-        padding: 14px 15px;
-        background: #f8fafc;
-        border: 1px solid #e5e7eb;
-        border-radius: 10px;
-        box-sizing: border-box;
-    }
+.extraction-field {
+    min-width: 0;
+    padding: 14px 15px;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    box-sizing: border-box;
+}
 
     .extraction-field span {
         display: block;
@@ -1240,21 +1704,22 @@
         text-overflow: ellipsis;
         white-space: nowrap;
     }
-    /* ========================================
+
+/* ========================================
    TOTAL AMOUNT
 ======================================== */
 
-    .extraction-total {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 20px;
-        margin-top: 14px;
-        padding: 17px 18px;
-        background: #eff6ff;
-        border: 1px solid #bfdbfe;
-        border-radius: 11px;
-    }
+.extraction-total {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    margin-top: 14px;
+    padding: 17px 18px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 11px;
+}
 
     .extraction-total div {
         min-width: 0;
@@ -1280,79 +1745,81 @@
         font-weight: 700;
         white-space: nowrap;
     }
-    /* ========================================
+
+/* ========================================
    EXTRACTION STATUS
 ======================================== */
 
-    .extraction-complete {
-        display: flex;
-        align-items: center;
-        gap: 11px;
-        margin-top: 14px;
-        padding: 13px 15px;
-        background: #f0fdf4;
-        border: 1px solid #bbf7d0;
-        border-radius: 10px;
-    }
+.extraction-complete {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    margin-top: 14px;
+    padding: 13px 15px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 10px;
+}
 
-    .extraction-complete-icon {
-        width: 30px;
-        height: 30px;
-        flex-shrink: 0;
-        border-radius: 50%;
-        background: #dcfce7;
-        color: #16a34a;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 15px;
-        font-weight: 700;
-    }
+.extraction-complete-icon {
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: #dcfce7;
+    color: #16a34a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 700;
+}
 
-    .extraction-complete div {
-        min-width: 0;
-    }
+.extraction-complete div {
+    min-width: 0;
+}
 
-    .extraction-complete strong {
-        display: block;
-        color: #166534;
-        font-size: 12px;
-        font-weight: 700;
-    }
+.extraction-complete strong {
+    display: block;
+    color: #166534;
+    font-size: 12px;
+    font-weight: 700;
+}
 
-    .extraction-complete span:not(.extraction-complete-icon) {
-        display: block;
-        margin-top: 3px;
-        color: #15803d;
-        font-size: 11px;
-    }
-    /* ========================================
+.extraction-complete span:not(.extraction-complete-icon) {
+    display: block;
+    margin-top: 3px;
+    color: #15803d;
+    font-size: 11px;
+}
+
+/* ========================================
    POPUP FOOTER
 ======================================== */
 
-    .extraction-popup-footer {
-        display: flex;
-        justify-content: flex-end;
-        padding: 18px 30px 24px;
-        border-top: 1px solid #e5e7eb;
-    }
+.extraction-popup-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 18px 30px 24px;
+    border-top: 1px solid #e5e7eb;
+}
 
-    .extraction-confirm-button {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        min-height: 44px;
-        padding: 11px 20px;
-        border: none;
-        border-radius: 9px;
-        background: #2563eb;
-        color: #ffffff;
-        font-size: 13px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-    }
+.extraction-confirm-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 44px;
+    padding: 11px 20px;
+    border: none;
+    border-radius: 9px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
 
     .extraction-confirm-button:hover {
         background: #1d4ed8;
@@ -1368,149 +1835,152 @@
         font-size: 17px;
         line-height: 1;
     }
-    /* ========================================
+
+/* ========================================
    POPUP SCROLLBAR
 ======================================== */
 
-    .extraction-popup::-webkit-scrollbar {
-        width: 7px;
-    }
+.extraction-popup::-webkit-scrollbar {
+    width: 7px;
+}
 
-    .extraction-popup::-webkit-scrollbar-track {
-        background: transparent;
-    }
+.extraction-popup::-webkit-scrollbar-track {
+    background: transparent;
+}
 
-    .extraction-popup::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 10px;
-    }
+.extraction-popup::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
 
     .extraction-popup::-webkit-scrollbar-thumb:hover {
         background: #94a3b8;
     }
-    /* ========================================
+
+/* ========================================
    POPUP ANIMATIONS
 ======================================== */
 
-    @keyframes extractionOverlayIn {
-        from {
-            opacity: 0;
-        }
-
-        to {
-            opacity: 1;
-        }
+@keyframes extractionOverlayIn {
+    from {
+        opacity: 0;
     }
 
-    @keyframes extractionPopupIn {
-        from {
-            opacity: 0;
-            transform: translateY(12px) scale(0.98);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-        }
+    to {
+        opacity: 1;
     }
-    /* ========================================
+}
+
+@keyframes extractionPopupIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* ========================================
    EXTRACTION POPUP - TABLET
 ======================================== */
 
-    @media (max-width: 700px) {
+@media (max-width: 700px) {
 
-        .extraction-overlay {
-            padding: 16px;
-        }
-
-        .extraction-popup {
-            max-height: 92vh;
-            border-radius: 16px;
-        }
-
-        .extraction-popup-header {
-            padding: 22px;
-        }
-
-        .extraction-file {
-            margin: 18px 22px 0;
-        }
-
-        .extraction-content {
-            padding: 21px 22px 22px;
-        }
-
-        .extraction-popup-footer {
-            padding: 16px 22px 20px;
-        }
+    .extraction-overlay {
+        padding: 16px;
     }
-    /* ========================================
+
+    .extraction-popup {
+        max-height: 92vh;
+        border-radius: 16px;
+    }
+
+    .extraction-popup-header {
+        padding: 22px;
+    }
+
+    .extraction-file {
+        margin: 18px 22px 0;
+    }
+
+    .extraction-content {
+        padding: 21px 22px 22px;
+    }
+
+    .extraction-popup-footer {
+        padding: 16px 22px 20px;
+    }
+}
+
+/* ========================================
    EXTRACTION POPUP - MOBILE
 ======================================== */
 
-    @media (max-width: 500px) {
+@media (max-width: 500px) {
 
-        .extraction-overlay {
-            padding: 10px;
+    .extraction-overlay {
+        padding: 10px;
+    }
+
+    .extraction-popup {
+        border-radius: 14px;
+    }
+
+    .extraction-popup-header {
+        padding: 19px;
+        gap: 11px;
+    }
+
+    .extraction-success-icon {
+        width: 45px;
+        height: 45px;
+        font-size: 23px;
+    }
+
+    .extraction-popup-header h2 {
+        font-size: 18px;
+    }
+
+    .extraction-popup-header p {
+        font-size: 11px;
+    }
+
+    .extraction-file {
+        margin: 15px 19px 0;
+        padding: 12px;
+    }
+
+    .extraction-content {
+        padding: 18px 19px 20px;
+    }
+
+    .extraction-grid {
+        grid-template-columns: 1fr;
+        gap: 9px;
+    }
+
+    .extraction-field {
+        padding: 12px;
+    }
+
+    .extraction-total {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 7px;
+    }
+
+        .extraction-total strong {
+            font-size: 17px;
         }
 
-        .extraction-popup {
-            border-radius: 14px;
-        }
+    .extraction-popup-footer {
+        padding: 15px 19px 18px;
+    }
 
-        .extraction-popup-header {
-            padding: 19px;
-            gap: 11px;
-        }
-
-        .extraction-success-icon {
-            width: 45px;
-            height: 45px;
-            font-size: 23px;
-        }
-
-        .extraction-popup-header h2 {
-            font-size: 18px;
-        }
-
-        .extraction-popup-header p {
-            font-size: 11px;
-        }
-
-        .extraction-file {
-            margin: 15px 19px 0;
-            padding: 12px;
-        }
-
-        .extraction-content {
-            padding: 18px 19px 20px;
-        }
-
-        .extraction-grid {
-            grid-template-columns: 1fr;
-            gap: 9px;
-        }
-
-        .extraction-field {
-            padding: 12px;
-        }
-
-        .extraction-total {
-            align-items: flex-start;
-            flex-direction: column;
-            gap: 7px;
-        }
-
-            .extraction-total strong {
-                font-size: 17px;
-            }
-
-        .extraction-popup-footer {
-            padding: 15px 19px 18px;
-        }
-
-        .extraction-confirm-button {
-            width: 100%;
-        }
+    .extraction-confirm-button {
+        width: 100%;
     }
 }

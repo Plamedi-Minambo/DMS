@@ -16,7 +16,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Document management system")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e751a03bed09ff14a103a07e8d90d29a571cc66b")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+06f85513727252beedfcd70e32a0622fab1b07a4")]
 [assembly: System.Reflection.AssemblyProductAttribute("Document management system")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Document management system")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
