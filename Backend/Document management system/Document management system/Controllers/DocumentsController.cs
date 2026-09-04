@@ -16,24 +16,24 @@ namespace DocumentManagement.API.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IWebHostEnvironment _environment;
-        private readonly PdfTextExtractionService _pdfTextExtractionService;
+        private readonly DocumentContentExtractionService _documentContentExtractionService;
         private readonly InvoiceExtractionService _invoiceExtractionService;
 
         public DocumentsController(
             ApplicationDbContext context,
             IWebHostEnvironment environment,
-            PdfTextExtractionService pdfTextExtractionService,
+            DocumentContentExtractionService documentContentExtractionService,
             InvoiceExtractionService invoiceExtractionService)
         {
             _context = context;
             _environment = environment;
-            _pdfTextExtractionService = pdfTextExtractionService;
+            _documentContentExtractionService = documentContentExtractionService;
             _invoiceExtractionService = invoiceExtractionService;
         }
 
-        // ========================================
+        // ============================================================
         // UPLOAD DOCUMENT
-        // ========================================
+        // ============================================================
 
         [Authorize(Roles = "Admin,Reviewer,Manager,Finance")]
         [HttpPost("upload")]
@@ -41,6 +41,10 @@ namespace DocumentManagement.API.Controllers
             IFormFile file,
             [FromForm] string? description)
         {
+            // --------------------------------------------------------
+            // 1. BASIC FILE VALIDATION
+            // --------------------------------------------------------
+
             if (file == null || file.Length == 0)
             {
                 return BadRequest(new
@@ -49,388 +53,486 @@ namespace DocumentManagement.API.Controllers
                 });
             }
 
+            // --------------------------------------------------------
+            // 2. GET ORIGINAL FILE INFORMATION
+            // --------------------------------------------------------
+
+            var originalFileName = Path.GetFileName(file.FileName);
+            var extension = Path.GetExtension(originalFileName)
+                .ToLowerInvariant();
+
+            // --------------------------------------------------------
+            // 3. ONLY ALLOW SUPPORTED FILE FORMATS
+            // --------------------------------------------------------
+            //
+            // IMPORTANT:
+            // The extension is ONLY used to decide which extraction
+            // method to use.
+            //
+            // It does NOT decide whether the document is an Invoice
+            // or Credit Note.
+            //
+            // The actual CONTENT of the file will decide that later.
+            // --------------------------------------------------------
+
+            var allowedExtensions = new[]
+            {
+                ".pdf",
+                ".docx",
+                ".jpg",
+                ".jpeg",
+                ".png"
+            };
+
+            if (!allowedExtensions.Contains(extension))
+            {
+                return BadRequest(new
+                {
+                    message =
+                        "Unsupported file type. Please upload a PDF, DOCX, JPG, JPEG, or PNG document."
+                });
+            }
+
+            // --------------------------------------------------------
+            // 4. CREATE UPLOADS FOLDER
+            // --------------------------------------------------------
+
             var uploadsFolder = Path.Combine(
                 _environment.ContentRootPath,
-                "Uploads"
-            );
+                "Uploads");
 
             if (!Directory.Exists(uploadsFolder))
             {
                 Directory.CreateDirectory(uploadsFolder);
             }
 
-            var originalFileName =
-                Path.GetFileName(file.FileName);
-
-            var extension =
-                Path.GetExtension(originalFileName);
+            // --------------------------------------------------------
+            // 5. GENERATE SAFE SERVER-SIDE FILE NAME
+            // --------------------------------------------------------
 
             var storedFileName =
-                $"{Guid.NewGuid()}{extension}";
+                $"{Guid.NewGuid():N}{extension}";
 
             var filePath = Path.Combine(
                 uploadsFolder,
-                storedFileName
-            );
+                storedFileName);
 
-            // ========================================
-            // SAVE PHYSICAL FILE
-            // ========================================
-
-            await using (var stream = new FileStream(
-                filePath,
-                FileMode.Create))
+            try
             {
-                await file.CopyToAsync(stream);
-            }
+                // ----------------------------------------------------
+                // 6. SAVE FILE TEMPORARILY
+                // ----------------------------------------------------
 
-            // ========================================
-            // GENERATE FILE HASH
-            // ========================================
-
-            string fileHash;
-
-            await using (var hashStream =
-                System.IO.File.OpenRead(filePath))
-            {
-                using var sha256 =
-                    SHA256.Create();
-
-                var hashBytes =
-                    await sha256.ComputeHashAsync(
-                        hashStream);
-
-                fileHash =
-                    Convert.ToHexString(hashBytes);
-            }
-
-            // ========================================
-            // DUPLICATE CHECK 1
-            // EXACT SAME FILE
-            // ========================================
-
-            var duplicateByFileHash =
-                await _context.Documents
-                    .AnyAsync(d =>
-                        d.FileHash == fileHash);
-
-            if (duplicateByFileHash)
-            {
-                if (System.IO.File.Exists(filePath))
+                await using (var stream = new FileStream(
+                    filePath,
+                    FileMode.Create,
+                    FileAccess.Write,
+                    FileShare.None))
                 {
-                    System.IO.File.Delete(filePath);
+                    await file.CopyToAsync(stream);
                 }
 
-                return Conflict(new
+                // ----------------------------------------------------
+                // 7. CALCULATE FILE HASH
+                // ----------------------------------------------------
+
+                string fileHash;
+
+                await using (var hashStream =
+                    System.IO.File.OpenRead(filePath))
                 {
-                    message =
-                        "Duplicate document detected. " +
-                        "This exact file has already been uploaded."
-                });
-            }
+                    using var sha256 = SHA256.Create();
 
-            // ========================================
-            // GET LOGGED-IN USER
-            // ========================================
+                    var hashBytes =
+                        await sha256.ComputeHashAsync(hashStream);
 
-            var userId =
-                User.FindFirstValue(
-                    ClaimTypes.NameIdentifier
-                );
-
-            // ========================================
-            // CREATE DOCUMENT
-            // ========================================
-
-            var document = new Document
-            {
-                FileName = originalFileName,
-                FileType = file.ContentType,
-                FileSize = file.Length,
-                FilePath = filePath,
-                StoredFileName = storedFileName,
-                FileHash = fileHash,
-                UploadedAt = DateTime.UtcNow,
-                Status = "Pending",
-                Description = description,
-                UploadedById = userId
-            };
-
-            _context.Documents.Add(document);
-
-            await _context.SaveChangesAsync();
-
-            // ========================================
-            // CREATE 3-STAGE APPROVAL WORKFLOW
-            // ========================================
-
-            _context.Approvals.AddRange(
-                new Approval
-                {
-                    DocumentId = document.Id,
-                    Stage = 1,
-                    Role = "Reviewer",
-                    Status = "Pending"
-                },
-                new Approval
-                {
-                    DocumentId = document.Id,
-                    Stage = 2,
-                    Role = "Manager",
-                    Status = "Pending"
-                },
-                new Approval
-                {
-                    DocumentId = document.Id,
-                    Stage = 3,
-                    Role = "Finance",
-                    Status = "Pending"
+                    fileHash =
+                        Convert.ToHexString(hashBytes);
                 }
-            );
 
-            await _context.SaveChangesAsync();
+                // ----------------------------------------------------
+                // 8. CHECK FOR EXACT DUPLICATE FILE
+                // ----------------------------------------------------
 
-            // ========================================
-            // CREATE INVOICE DATA RECORD
-            // ========================================
+                var duplicateByFileHash =
+                    await _context.Documents.AnyAsync(
+                        d => d.FileHash == fileHash);
 
-            var invoiceData = new InvoiceData
-            {
-                DocumentId = document.Id,
-                DocumentType = null,
-                InvoiceNumber = null,
-                Vendor = null,
-                InvoiceDate = null,
-                Amount = null,
-                VAT = null,
-                TotalAmount = null,
-                ExtractedAt = null,
-                ExtractionStatus = "Pending"
-            };
+                if (duplicateByFileHash)
+                {
+                    DeleteFileIfExists(filePath);
 
-            _context.InvoiceData.Add(invoiceData);
+                    return Conflict(new
+                    {
+                        message =
+                            "Duplicate document detected. This exact file has already been uploaded."
+                    });
+                }
 
-            await _context.SaveChangesAsync();
+                // ----------------------------------------------------
+                // 9. EXTRACT ACTUAL DOCUMENT CONTENT
+                // ----------------------------------------------------
+                //
+                // PDF  -> PdfPig
+                // DOCX -> OpenXML
+                // JPG/JPEG/PNG -> Tesseract OCR
+                //
+                // IMPORTANT:
+                // We do this BEFORE creating a Document record.
+                // ----------------------------------------------------
 
-            // ========================================
-            // PDF TEXT EXTRACTION
-            // ========================================
+                string extractedText;
 
-            if (string.Equals(
-                extension,
-                ".pdf",
-                StringComparison.OrdinalIgnoreCase))
-            {
                 try
                 {
-                    var extractedText =
-                        await _pdfTextExtractionService
-                            .ExtractTextAsync(filePath);
-
-                    // ========================================
-                    // INVOICE DATA EXTRACTION
-                    // ========================================
-
-                    var extractedInvoiceData =
-                        _invoiceExtractionService
-                            .ExtractInvoiceData(
-                                document.Id,
-                                extractedText);
-
-                    invoiceData.DocumentType =
-                        extractedInvoiceData.DocumentType;
-
-                    invoiceData.InvoiceNumber =
-                        extractedInvoiceData.InvoiceNumber;
-
-                    invoiceData.Vendor =
-                        extractedInvoiceData.Vendor;
-
-                    invoiceData.InvoiceDate =
-                        extractedInvoiceData.InvoiceDate;
-
-                    invoiceData.Amount =
-                        extractedInvoiceData.Amount;
-
-                    invoiceData.VAT =
-                        extractedInvoiceData.VAT;
-
-                    invoiceData.TotalAmount =
-                        extractedInvoiceData.TotalAmount;
-
-                    invoiceData.ExtractedAt =
-                        extractedInvoiceData.ExtractedAt;
-
-                    invoiceData.ExtractionStatus =
-                        extractedInvoiceData.ExtractionStatus;
-
-                    await _context.SaveChangesAsync();
+                    extractedText =
+                        await _documentContentExtractionService
+                            .ExtractTextAsync(
+                                filePath,
+                                extension);
                 }
                 catch (Exception ex)
                 {
-                    invoiceData.ExtractionStatus = "Failed";
-                    invoiceData.ExtractedAt =
-                        DateTime.UtcNow;
-
-                    await _context.SaveChangesAsync();
-
                     Console.WriteLine(
-                        $"PDF extraction failed: {ex.Message}");
+                        $"Document content extraction failed: {ex.Message}");
+
+                    DeleteFileIfExists(filePath);
+
+                    return BadRequest(new
+                    {
+                        message =
+                            "The document could not be read. Please upload a valid PDF, DOCX, JPG, JPEG, or PNG file."
+                    });
                 }
-            }
-            else
-            {
-                invoiceData.ExtractionStatus =
-                    "Pending";
 
-                await _context.SaveChangesAsync();
-            }
+                // ----------------------------------------------------
+                // 10. MAKE SURE CONTENT WAS ACTUALLY EXTRACTED
+                // ----------------------------------------------------
 
-            // ========================================
-            // DUPLICATE CHECK 2
-            // SAME INVOICE NUMBER
-            // ========================================
+                if (string.IsNullOrWhiteSpace(extractedText))
+                {
+                    DeleteFileIfExists(filePath);
 
-            var normalizedInvoiceNumber =
-                invoiceData.InvoiceNumber?
-                    .Trim()
-                    .ToLower();
+                    return BadRequest(new
+                    {
+                        message =
+                            "No readable text was found in the document. Please upload a readable Invoice or Credit Note."
+                    });
+                }
 
-            if (!string.IsNullOrWhiteSpace(
-                normalizedInvoiceNumber))
-            {
-                var duplicateByInvoiceNumber =
-                    await _context.InvoiceData
-                        .AnyAsync(i =>
-                            i.DocumentId != document.Id &&
+                // ----------------------------------------------------
+                // 11. CLASSIFY THE DOCUMENT USING ITS CONTENT
+                // ----------------------------------------------------
+                //
+                // IMPORTANT:
+                //
+                // Filename is NOT used here.
+                //
+                // Example:
+                //
+                // Invoice.pdf containing a CV
+                // -> rejected
+                //
+                // random.pdf containing an Invoice
+                // -> accepted
+                //
+                // The InvoiceExtractionService examines the actual
+                // extracted text.
+                // ----------------------------------------------------
+
+                var extractedInvoiceData =
+                    _invoiceExtractionService.ExtractInvoiceData(
+                        0,
+                        extractedText);
+
+                // ----------------------------------------------------
+                // 12. CHECK DOCUMENT TYPE
+                // ----------------------------------------------------
+
+                var documentType =
+                    extractedInvoiceData.DocumentType?.Trim();
+
+                var isInvoice =
+                    string.Equals(
+                        documentType,
+                        "Invoice",
+                        StringComparison.OrdinalIgnoreCase);
+
+                var isCreditNote =
+                    string.Equals(
+                        documentType,
+                        "Credit Note",
+                        StringComparison.OrdinalIgnoreCase);
+
+                // ----------------------------------------------------
+                // 13. REJECT EVERYTHING THAT IS NOT AN INVOICE
+                //     OR CREDIT NOTE
+                // ----------------------------------------------------
+
+                if (!isInvoice && !isCreditNote)
+                {
+                    DeleteFileIfExists(filePath);
+
+                    return UnprocessableEntity(new
+                    {
+                        message =
+                            "This document was rejected because its content could not be identified as an Invoice or Credit Note."
+                    });
+                }
+
+                // ----------------------------------------------------
+                // 14. CHECK FOR DUPLICATE INVOICE NUMBER
+                // ----------------------------------------------------
+                //
+                // This happens BEFORE creating the database records.
+                // ----------------------------------------------------
+
+                var normalizedInvoiceNumber =
+                    extractedInvoiceData.InvoiceNumber?
+                        .Trim()
+                        .ToLowerInvariant();
+
+                if (!string.IsNullOrWhiteSpace(
+                    normalizedInvoiceNumber))
+                {
+                    var duplicateByInvoiceNumber =
+                        await _context.InvoiceData.AnyAsync(i =>
                             i.InvoiceNumber != null &&
                             i.InvoiceNumber
                                 .Trim()
                                 .ToLower() ==
-                            normalizedInvoiceNumber);
+                                normalizedInvoiceNumber);
 
-                if (duplicateByInvoiceNumber)
-                {
-                    // Delete invoice data
-                    _context.InvoiceData.Remove(
-                        invoiceData);
-
-                    // Delete document
-                    _context.Documents.Remove(
-                        document);
-
-                    await _context.SaveChangesAsync();
-
-                    // Delete physical file
-                    if (System.IO.File.Exists(filePath))
+                    if (duplicateByInvoiceNumber)
                     {
-                        System.IO.File.Delete(filePath);
+                        DeleteFileIfExists(filePath);
+
+                        return Conflict(new
+                        {
+                            message =
+                                "Duplicate document detected. " +
+                                $"Invoice number '{extractedInvoiceData.InvoiceNumber}' already exists."
+                        });
                     }
-
-                    return Conflict(new
-                    {
-                        message =
-                            "Duplicate document detected. " +
-                            $"Invoice number '{invoiceData.InvoiceNumber}' " +
-                            "already exists."
-                    });
                 }
-            }
 
-            // ========================================
-            // DUPLICATE CHECK 3
-            // SAME VENDOR + SAME AMOUNT
-            // ========================================
+                // ----------------------------------------------------
+                // 15. CHECK FOR DUPLICATE VENDOR + AMOUNT
+                // ----------------------------------------------------
 
-            var normalizedVendor =
-                invoiceData.Vendor?
-                    .Trim()
-                    .ToLower();
+                var normalizedVendor =
+                    extractedInvoiceData.Vendor?
+                        .Trim()
+                        .ToLowerInvariant();
 
-            if (!string.IsNullOrWhiteSpace(
+                if (!string.IsNullOrWhiteSpace(
                     normalizedVendor) &&
-                invoiceData.Amount.HasValue)
-            {
-                var duplicateByVendorAndAmount =
-                    await _context.InvoiceData
-                        .AnyAsync(i =>
-                            i.DocumentId != document.Id &&
+                    extractedInvoiceData.Amount.HasValue)
+                {
+                    var duplicateByVendorAndAmount =
+                        await _context.InvoiceData.AnyAsync(i =>
                             i.Vendor != null &&
                             i.Vendor
                                 .Trim()
                                 .ToLower() ==
-                            normalizedVendor &&
+                                normalizedVendor &&
                             i.Amount.HasValue &&
                             i.Amount.Value ==
-                            invoiceData.Amount.Value);
+                                extractedInvoiceData.Amount.Value);
 
-                if (duplicateByVendorAndAmount)
-                {
-                    // Delete invoice data
-                    _context.InvoiceData.Remove(
-                        invoiceData);
-
-                    // Delete document
-                    _context.Documents.Remove(
-                        document);
-
-                    await _context.SaveChangesAsync();
-
-                    // Delete physical file
-                    if (System.IO.File.Exists(filePath))
+                    if (duplicateByVendorAndAmount)
                     {
-                        System.IO.File.Delete(filePath);
-                    }
+                        DeleteFileIfExists(filePath);
 
-                    return Conflict(new
+                        return Conflict(new
+                        {
+                            message =
+                                "Duplicate document detected. " +
+                                "A document with the same vendor and amount already exists."
+                        });
+                    }
+                }
+
+                // ----------------------------------------------------
+                // 16. GET CURRENT USER
+                // ----------------------------------------------------
+
+                var userId =
+                    User.FindFirstValue(
+                        ClaimTypes.NameIdentifier);
+
+                // ----------------------------------------------------
+                // 17. CREATE DOCUMENT
+                // ----------------------------------------------------
+                //
+                // At this point:
+                //
+                // - File format is supported
+                // - File was readable
+                // - Content was extracted
+                // - Content was classified
+                // - Document is Invoice/Credit Note
+                // - Duplicate checks passed
+                //
+                // ONLY NOW do we create database records.
+                // ----------------------------------------------------
+
+                var document = new Document
+                {
+                    FileName = originalFileName,
+                    FileType = file.ContentType,
+                    FileSize = file.Length,
+                    FilePath = filePath,
+                    StoredFileName = storedFileName,
+                    FileHash = fileHash,
+                    UploadedAt = DateTime.UtcNow,
+                    Status = "Pending",
+                    Description = description,
+                    UploadedById = userId
+                };
+
+                // ----------------------------------------------------
+                // 18. CREATE INVOICE DATA
+                // ----------------------------------------------------
+
+                var invoiceData = new InvoiceData
+                {
+                    Document = document,
+
+                    DocumentType =
+                        extractedInvoiceData.DocumentType,
+
+                    InvoiceNumber =
+                        extractedInvoiceData.InvoiceNumber,
+
+                    Vendor =
+                        extractedInvoiceData.Vendor,
+
+                    InvoiceDate =
+                        extractedInvoiceData.InvoiceDate,
+
+                    Amount =
+                        extractedInvoiceData.Amount,
+
+                    VAT =
+                        extractedInvoiceData.VAT,
+
+                    TotalAmount =
+                        extractedInvoiceData.TotalAmount,
+
+                    ExtractedAt =
+                        extractedInvoiceData.ExtractedAt,
+
+                    ExtractionStatus =
+                        extractedInvoiceData.ExtractionStatus
+                };
+
+                // ----------------------------------------------------
+                // 19. CREATE APPROVAL WORKFLOW
+                // ----------------------------------------------------
+
+                var approvals = new[]
+                {
+                    new Approval
+                    {
+                        Document = document,
+                        Stage = 1,
+                        Role = "Reviewer",
+                        Status = "Pending"
+                    },
+
+                    new Approval
+                    {
+                        Document = document,
+                        Stage = 2,
+                        Role = "Manager",
+                        Status = "Pending"
+                    },
+
+                    new Approval
+                    {
+                        Document = document,
+                        Stage = 3,
+                        Role = "Finance",
+                        Status = "Pending"
+                    }
+                };
+
+                // ----------------------------------------------------
+                // 20. ADD ALL DATABASE RECORDS
+                // ----------------------------------------------------
+
+                _context.Documents.Add(document);
+
+                _context.InvoiceData.Add(invoiceData);
+
+                _context.Approvals.AddRange(approvals);
+
+                // ----------------------------------------------------
+                // 21. SAVE EVERYTHING
+                // ----------------------------------------------------
+
+                await _context.SaveChangesAsync();
+
+                // ----------------------------------------------------
+                // 22. RETURN SUCCESS RESPONSE
+                // ----------------------------------------------------
+
+                return Ok(new
+                {
+                    message =
+                        "Document uploaded successfully.",
+
+                    document = new
+                    {
+                        document.Id,
+                        document.FileName,
+                        document.FileType,
+                        document.FileSize,
+                        document.Status,
+                        document.Description,
+                        document.UploadedAt,
+
+                        InvoiceData = new
+                        {
+                            invoiceData.Id,
+                            invoiceData.DocumentType,
+                            invoiceData.InvoiceNumber,
+                            invoiceData.Vendor,
+                            invoiceData.InvoiceDate,
+                            invoiceData.Amount,
+                            invoiceData.VAT,
+                            invoiceData.TotalAmount,
+                            invoiceData.ExtractedAt,
+                            invoiceData.ExtractionStatus
+                        }
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                // ----------------------------------------------------
+                // 23. CLEAN UP FILE IF ANY UNEXPECTED ERROR OCCURS
+                // ----------------------------------------------------
+
+                Console.WriteLine(
+                    $"Document upload failed: {ex.Message}");
+
+                DeleteFileIfExists(filePath);
+
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    new
                     {
                         message =
-                            "Duplicate document detected. " +
-                            "A document with the same vendor " +
-                            "and amount already exists."
+                            "An unexpected error occurred while processing the document."
                     });
-                }
             }
-
-            // ========================================
-            // RETURN RESPONSE
-            // ========================================
-
-            return Ok(new
-            {
-                message =
-                    "Document uploaded successfully.",
-
-                document = new
-                {
-                    document.Id,
-                    document.FileName,
-                    document.FileType,
-                    document.FileSize,
-                    document.Status,
-                    document.Description,
-                    document.UploadedAt,
-
-                    InvoiceData = new
-                    {
-                        invoiceData.Id,
-                        invoiceData.DocumentType,
-                        invoiceData.InvoiceNumber,
-                        invoiceData.Vendor,
-                        invoiceData.InvoiceDate,
-                        invoiceData.Amount,
-                        invoiceData.VAT,
-                        invoiceData.TotalAmount,
-                        invoiceData.ExtractedAt,
-                        invoiceData.ExtractionStatus
-                    }
-                }
-            });
         }
 
-        // ========================================
+        // ============================================================
         // GET ALL DOCUMENTS
-        // ========================================
+        // ============================================================
 
         [Authorize(Roles = "Admin,Reviewer,Manager,Finance,Viewer")]
         [HttpGet]
@@ -450,41 +552,44 @@ namespace DocumentManagement.API.Controllers
                     d.Description,
                     d.UploadedAt,
 
-                    UploadedBy = d.UploadedBy != null
-                        ? d.UploadedBy.FullName
-                        : "Unknown",
+                    UploadedBy =
+                        d.UploadedBy != null
+                            ? d.UploadedBy.FullName
+                            : "Unknown",
 
-                    InvoiceData = d.InvoiceData == null
-                        ? null
-                        : new
-                        {
-                            d.InvoiceData.Id,
-                            d.InvoiceData.DocumentType,
-                            d.InvoiceData.InvoiceNumber,
-                            d.InvoiceData.Vendor,
-                            d.InvoiceData.InvoiceDate,
-                            d.InvoiceData.Amount,
-                            d.InvoiceData.VAT,
-                            d.InvoiceData.TotalAmount,
-                            d.InvoiceData.ExtractedAt,
-                            d.InvoiceData.ExtractionStatus
-                        }
+                    InvoiceData =
+                        d.InvoiceData == null
+                            ? null
+                            : new
+                            {
+                                d.InvoiceData.Id,
+                                d.InvoiceData.DocumentType,
+                                d.InvoiceData.InvoiceNumber,
+                                d.InvoiceData.Vendor,
+                                d.InvoiceData.InvoiceDate,
+                                d.InvoiceData.Amount,
+                                d.InvoiceData.VAT,
+                                d.InvoiceData.TotalAmount,
+                                d.InvoiceData.ExtractedAt,
+                                d.InvoiceData.ExtractionStatus
+                            }
                 })
                 .ToListAsync();
 
             return Ok(documents);
         }
 
-        // ========================================
+        // ============================================================
         // VIEW DOCUMENT
-        // ========================================
+        // ============================================================
 
         [Authorize(Roles = "Admin,Reviewer,Manager,Finance,Viewer")]
         [HttpGet("{id}/view")]
         public async Task<IActionResult> ViewDocument(int id)
         {
-            var document = await _context.Documents
-                .FirstOrDefaultAsync(d => d.Id == id);
+            var document =
+                await _context.Documents
+                    .FirstOrDefaultAsync(d => d.Id == id);
 
             if (document == null)
             {
@@ -516,13 +621,12 @@ namespace DocumentManagement.API.Controllers
 
             var fileBytes =
                 await System.IO.File.ReadAllBytesAsync(
-                    document.FilePath
-                );
+                    document.FilePath);
 
             var contentType =
                 string.IsNullOrWhiteSpace(
                     document.FileType)
-                    ? "application/pdf"
+                    ? "application/octet-stream"
                     : document.FileType;
 
             Response.Headers.ContentDisposition =
@@ -530,21 +634,21 @@ namespace DocumentManagement.API.Controllers
 
             return File(
                 fileBytes,
-                contentType
-            );
+                contentType);
         }
 
-        // ========================================
+        // ============================================================
         // DOWNLOAD DOCUMENT
-        // ========================================
+        // ============================================================
 
         [Authorize(Roles = "Admin,Reviewer,Manager,Finance")]
         [HttpGet("{id}/download")]
         public async Task<IActionResult> DownloadDocument(
             int id)
         {
-            var document = await _context.Documents
-                .FirstOrDefaultAsync(d => d.Id == id);
+            var document =
+                await _context.Documents
+                    .FirstOrDefaultAsync(d => d.Id == id);
 
             if (document == null)
             {
@@ -576,28 +680,27 @@ namespace DocumentManagement.API.Controllers
 
             var fileBytes =
                 await System.IO.File.ReadAllBytesAsync(
-                    document.FilePath
-                );
+                    document.FilePath);
 
             return File(
                 fileBytes,
                 document.FileType ??
-                    "application/octet-stream",
-                document.FileName
-            );
+                "application/octet-stream",
+                document.FileName);
         }
 
-        // ========================================
+        // ============================================================
         // DELETE DOCUMENT
-        // ========================================
+        // ============================================================
 
         [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteDocument(
             int id)
         {
-            var document = await _context.Documents
-                .FirstOrDefaultAsync(d => d.Id == id);
+            var document =
+                await _context.Documents
+                    .FirstOrDefaultAsync(d => d.Id == id);
 
             if (document == null)
             {
@@ -606,10 +709,6 @@ namespace DocumentManagement.API.Controllers
                     message = "Document not found."
                 });
             }
-
-            // ========================================
-            // DELETE ASSOCIATED INVOICE DATA
-            // ========================================
 
             var invoiceData =
                 await _context.InvoiceData
@@ -622,26 +721,17 @@ namespace DocumentManagement.API.Controllers
                     invoiceData);
             }
 
-            // ========================================
-            // DELETE PHYSICAL FILE
-            // ========================================
-
             if (!string.IsNullOrWhiteSpace(
-                document.FilePath))
-            {
-                if (System.IO.File.Exists(
+                document.FilePath) &&
+                System.IO.File.Exists(
                     document.FilePath))
-                {
-                    System.IO.File.Delete(
-                        document.FilePath);
-                }
+            {
+                System.IO.File.Delete(
+                    document.FilePath);
             }
 
-            // ========================================
-            // DELETE DATABASE RECORD
-            // ========================================
-
-            _context.Documents.Remove(document);
+            _context.Documents.Remove(
+                document);
 
             await _context.SaveChangesAsync();
 
@@ -651,6 +741,27 @@ namespace DocumentManagement.API.Controllers
                     "Document deleted successfully."
             });
         }
+
+        // ============================================================
+        // HELPER: DELETE FILE SAFELY
+        // ============================================================
+
+        private static void DeleteFileIfExists(
+            string filePath)
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(filePath) &&
+                    System.IO.File.Exists(filePath))
+                {
+                    System.IO.File.Delete(filePath);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(
+                    $"Could not delete temporary file: {ex.Message}");
+            }
+        }
     }
 }
-

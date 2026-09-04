@@ -35,34 +35,34 @@
           }
         }
       },
-      "DocumentFormat.OpenXml/3.1.1": {
+      "DocumentFormat.OpenXml/3.5.1": {
         "type": "package",
         "dependencies": {
-          "DocumentFormat.OpenXml.Framework": "3.1.1"
+          "DocumentFormat.OpenXml.Framework": "3.5.1"
         },
         "compile": {
-          "lib/net8.0/DocumentFormat.OpenXml.dll": {
+          "lib/net10.0/DocumentFormat.OpenXml.dll": {
             "related": ".xml"
           }
         },
         "runtime": {
-          "lib/net8.0/DocumentFormat.OpenXml.dll": {
+          "lib/net10.0/DocumentFormat.OpenXml.dll": {
             "related": ".xml"
           }
         }
       },
-      "DocumentFormat.OpenXml.Framework/3.1.1": {
+      "DocumentFormat.OpenXml.Framework/3.5.1": {
         "type": "package",
         "dependencies": {
-          "System.IO.Packaging": "8.0.1"
+          "System.IO.Packaging": "10.0.2"
         },
         "compile": {
-          "lib/net8.0/DocumentFormat.OpenXml.Framework.dll": {
+          "lib/net10.0/DocumentFormat.OpenXml.Framework.dll": {
             "related": ".xml"
           }
         },
         "runtime": {
-          "lib/net8.0/DocumentFormat.OpenXml.Framework.dll": {
+          "lib/net10.0/DocumentFormat.OpenXml.Framework.dll": {
             "related": ".xml"
           }
         }
@@ -1307,20 +1307,36 @@
           }
         }
       },
-      "System.IO.Packaging/8.0.1": {
+      "System.IO.Packaging/10.0.2": {
         "type": "package",
         "compile": {
-          "lib/net8.0/System.IO.Packaging.dll": {
+          "lib/net10.0/System.IO.Packaging.dll": {
             "related": ".xml"
           }
         },
         "runtime": {
-          "lib/net8.0/System.IO.Packaging.dll": {
+          "lib/net10.0/System.IO.Packaging.dll": {
             "related": ".xml"
           }
         },
         "build": {
-          "buildTransitive/net6.0/_._": {}
+          "buildTransitive/net8.0/_._": {}
+        }
+      },
+      "TesseractOCR/5.5.2": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard2.1/TesseractOCR.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/netstandard2.1/TesseractOCR.dll": {
+            "related": ".xml"
+          }
+        },
+        "build": {
+          "build/TesseractOCR.targets": {}
         }
       },
       "UglyToad.PdfPig/1.7.0-custom-5": {
@@ -1450,17 +1466,19 @@
         "lib/netstandard2.1/ClosedXML.Parser.xml"
       ]
     },
-    "DocumentFormat.OpenXml/3.1.1": {
-      "sha512": "2z9QBzeTLNNKWM9SaOSDMegfQk/7hDuElOsmF77pKZMkFRP/GHA/W/4yOAQD9kn15N/FsFxHn3QVYkatuZghiA==",
+    "DocumentFormat.OpenXml/3.5.1": {
+      "sha512": "zxdOf5VVCe/uNklbRhj8dVBzQGj3DoqkUuqOp9cAZVuN8mNYDjof1lvSQA2OQNr8Ptc9d7pbA7Azq/ReaI3FpA==",
       "type": "package",
-      "path": "documentformat.openxml/3.1.1",
+      "path": "documentformat.openxml/3.5.1",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "README.md",
-        "documentformat.openxml.3.1.1.nupkg.sha512",
+        "documentformat.openxml.3.5.1.nupkg.sha512",
         "documentformat.openxml.nuspec",
         "icon.png",
+        "lib/net10.0/DocumentFormat.OpenXml.dll",
+        "lib/net10.0/DocumentFormat.OpenXml.xml",
         "lib/net35/DocumentFormat.OpenXml.dll",
         "lib/net35/DocumentFormat.OpenXml.xml",
         "lib/net40/DocumentFormat.OpenXml.dll",
@@ -1473,17 +1491,19 @@
         "lib/netstandard2.0/DocumentFormat.OpenXml.xml"
       ]
     },
-    "DocumentFormat.OpenXml.Framework/3.1.1": {
-      "sha512": "6APEp/ElZV58S/4v8mf4Ke3ONEDORs64MqdD64Z7wWpcHANB9oovQsGIwtqjnKihulOj7T0a6IxHIHOfMqKOng==",
+    "DocumentFormat.OpenXml.Framework/3.5.1": {
+      "sha512": "U5txtc3ORno73xQx9Lf2gWzfaSZnZwKHfLkTAslhlew9lxe5XbUiCt0dY1fHeAf8yRqszUAe5i/+xLC9R/Xfsw==",
       "type": "package",
-      "path": "documentformat.openxml.framework/3.1.1",
+      "path": "documentformat.openxml.framework/3.5.1",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "README.md",
-        "documentformat.openxml.framework.3.1.1.nupkg.sha512",
+        "documentformat.openxml.framework.3.5.1.nupkg.sha512",
         "documentformat.openxml.framework.nuspec",
         "icon.png",
+        "lib/net10.0/DocumentFormat.OpenXml.Framework.dll",
+        "lib/net10.0/DocumentFormat.OpenXml.Framework.xml",
         "lib/net35/DocumentFormat.OpenXml.Framework.dll",
         "lib/net35/DocumentFormat.OpenXml.Framework.xml",
         "lib/net40/DocumentFormat.OpenXml.Framework.dll",
@@ -4013,33 +4033,59 @@
         "system.identitymodel.tokens.jwt.nuspec"
       ]
     },
-    "System.IO.Packaging/8.0.1": {
-      "sha512": "KYkIOAvPexQOLDxPO2g0BVoWInnQhPpkFzRqvNrNrMhVT6kqhVr0zEb6KCHlptLFukxnZrjuMVAnxK7pOGUYrw==",
+    "System.IO.Packaging/10.0.2": {
+      "sha512": "JTpM4z0wpoIHHDvlCU27HsXo+zVnpWib94HXQpzzr+jc/P9NYf4w353AK4MXyGq/grm1mbLi7eXsOsDU8sGmNg==",
       "type": "package",
-      "path": "system.io.packaging/8.0.1",
+      "path": "system.io.packaging/10.0.2",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "Icon.png",
-        "LICENSE.TXT",
         "THIRD-PARTY-NOTICES.TXT",
         "buildTransitive/net461/System.IO.Packaging.targets",
         "buildTransitive/net462/_._",
-        "buildTransitive/net6.0/_._",
+        "buildTransitive/net8.0/_._",
         "buildTransitive/netcoreapp2.0/System.IO.Packaging.targets",
+        "lib/net10.0/System.IO.Packaging.dll",
+        "lib/net10.0/System.IO.Packaging.xml",
         "lib/net462/System.IO.Packaging.dll",
         "lib/net462/System.IO.Packaging.xml",
-        "lib/net6.0/System.IO.Packaging.dll",
-        "lib/net6.0/System.IO.Packaging.xml",
-        "lib/net7.0/System.IO.Packaging.dll",
-        "lib/net7.0/System.IO.Packaging.xml",
         "lib/net8.0/System.IO.Packaging.dll",
         "lib/net8.0/System.IO.Packaging.xml",
+        "lib/net9.0/System.IO.Packaging.dll",
+        "lib/net9.0/System.IO.Packaging.xml",
         "lib/netstandard2.0/System.IO.Packaging.dll",
         "lib/netstandard2.0/System.IO.Packaging.xml",
-        "system.io.packaging.8.0.1.nupkg.sha512",
+        "system.io.packaging.10.0.2.nupkg.sha512",
         "system.io.packaging.nuspec",
         "useSharedDesignerContext.txt"
+      ]
+    },
+    "TesseractOCR/5.5.2": {
+      "sha512": "m/B0uXLq7JvXfsn+KJtB8iiBJaySEUH13P3x0q9hvnXZ5QnN4+9KcFQaLFE5hwVZD1zGOy2KLxN4B9A1HxvtPQ==",
+      "type": "package",
+      "path": "tesseractocr/5.5.2",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "README.md",
+        "build/TesseractOCR.targets",
+        "lib/leptonica-1.85.0.dll",
+        "lib/netstandard2.0/TesseractOCR.dll",
+        "lib/netstandard2.0/TesseractOCR.xml",
+        "lib/netstandard2.1/TesseractOCR.dll",
+        "lib/netstandard2.1/TesseractOCR.xml",
+        "lib/tesseract.exe",
+        "lib/tesseract55.dll",
+        "ocr.png",
+        "tesseractocr.5.5.2.nupkg.sha512",
+        "tesseractocr.nuspec",
+        "x64/leptonica-1.85.0.dll",
+        "x64/tesseract.exe",
+        "x64/tesseract55.dll",
+        "x86/leptonica-1.85.0.dll",
+        "x86/tesseract.exe",
+        "x86/tesseract55.dll"
       ]
     },
     "UglyToad.PdfPig/1.7.0-custom-5": {
@@ -4190,6 +4236,7 @@
   "projectFileDependencyGroups": {
     "net10.0": [
       "ClosedXML >= 0.105.1",
+      "DocumentFormat.OpenXml >= 3.5.1",
       "Microsoft.AspNetCore.Authentication.JwtBearer >= 10.0.11",
       "Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore >= 10.0.11",
       "Microsoft.AspNetCore.Identity.EntityFrameworkCore >= 10.0.11",
@@ -4199,6 +4246,7 @@
       "Microsoft.EntityFrameworkCore.Tools >= 10.0.11",
       "QuestPDF >= 2026.8.0",
       "Swashbuckle.AspNetCore >= 10.2.3",
+      "TesseractOCR >= 5.5.2",
       "UglyToad.PdfPig >= 1.7.0-custom-5"
     ]
   },
@@ -4258,6 +4306,10 @@
             "target": "Package",
             "version": "[0.105.1, )"
           },
+          "DocumentFormat.OpenXml": {
+            "target": "Package",
+            "version": "[3.5.1, )"
+          },
           "Microsoft.AspNetCore.Authentication.JwtBearer": {
             "target": "Package",
             "version": "[10.0.11, )"
@@ -4294,6 +4346,10 @@
           "Swashbuckle.AspNetCore": {
             "target": "Package",
             "version": "[10.2.3, )"
+          },
+          "TesseractOCR": {
+            "target": "Package",
+            "version": "[5.5.2, )"
           },
           "UglyToad.PdfPig": {
             "target": "Package",

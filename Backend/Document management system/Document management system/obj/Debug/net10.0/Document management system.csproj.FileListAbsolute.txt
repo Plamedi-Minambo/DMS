@@ -633,3 +633,9 @@ C:\Users\Admin\source\repos\Document Management system\Backend\Document manageme
 C:\Users\Admin\source\repos\Document Management system\Backend\Document management system\Document management system\obj\Debug\net10.0\compressed\nz7k5btcux-{0}-m9qm4tazc0-m9qm4tazc0.gz
 C:\Users\Admin\source\repos\Document Management system\Backend\Document management system\Document management system\obj\Debug\net10.0\compressed\kaphud0s96-{0}-jjsuc0puko-jjsuc0puko.gz
 C:\Users\Admin\source\repos\Document Management system\Backend\Document management system\Document management system\obj\Debug\net10.0\compressed\07gx85r7dv-{0}-9vr69e8ynj-9vr69e8ynj.gz
+C:\Users\Admin\source\repos\Document Management system\Backend\Document management system\Document management system\bin\Debug\net10.0\x86\leptonica-1.85.0.dll
+C:\Users\Admin\source\repos\Document Management system\Backend\Document management system\Document management system\bin\Debug\net10.0\x86\tesseract55.dll
+C:\Users\Admin\source\repos\Document Management system\Backend\Document management system\Document management system\bin\Debug\net10.0\x64\leptonica-1.85.0.dll
+C:\Users\Admin\source\repos\Document Management system\Backend\Document management system\Document management system\bin\Debug\net10.0\x64\tesseract55.dll
+C:\Users\Admin\source\repos\Document Management system\Backend\Document management system\Document management system\bin\Debug\net10.0\TesseractOCR.dll
+C:\Users\Admin\source\repos\Document Management system\Backend\Document management system\Document management system\bin\Debug\net10.0\tessdata\eng.traineddata

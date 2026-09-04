@@ -56,6 +56,10 @@
               "target": "Package",
               "version": "[0.105.1, )"
             },
+            "DocumentFormat.OpenXml": {
+              "target": "Package",
+              "version": "[3.5.1, )"
+            },
             "Microsoft.AspNetCore.Authentication.JwtBearer": {
               "target": "Package",
               "version": "[10.0.11, )"
@@ -92,6 +96,10 @@
             "Swashbuckle.AspNetCore": {
               "target": "Package",
               "version": "[10.2.3, )"
+            },
+            "TesseractOCR": {
+              "target": "Package",
+              "version": "[5.5.2, )"
             },
             "UglyToad.PdfPig": {
               "target": "Package",

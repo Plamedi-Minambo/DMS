@@ -536,6 +536,14 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+// ============================================================
+// APPLICATION SERVICES
+// ============================================================
+
+builder.Services.AddScoped<PdfTextExtractionService>();
+builder.Services.AddScoped<InvoiceExtractionService>();
+builder.Services.AddScoped<DocumentContentExtractionService>();
+
 QuestPDF.Settings.License = LicenseType.Community;
 // Allow React frontend to communicate with the API.
 app.UseCors("ReactFrontend");
