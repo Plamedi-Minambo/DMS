@@ -1,4 +1,5 @@
-﻿using DocumentManagement.API.Data;
+
+using DocumentManagement.API.Data;
 using DocumentManagement.API.Models;
 using DocumentManagement.API.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -41,10 +42,6 @@ namespace DocumentManagement.API.Controllers
             IFormFile file,
             [FromForm] string? description)
         {
-            // --------------------------------------------------------
-            // 1. BASIC FILE VALIDATION
-            // --------------------------------------------------------
-
             if (file == null || file.Length == 0)
             {
                 return BadRequest(new
@@ -53,27 +50,10 @@ namespace DocumentManagement.API.Controllers
                 });
             }
 
-            // --------------------------------------------------------
-            // 2. GET ORIGINAL FILE INFORMATION
-            // --------------------------------------------------------
-
             var originalFileName = Path.GetFileName(file.FileName);
+
             var extension = Path.GetExtension(originalFileName)
                 .ToLowerInvariant();
-
-            // --------------------------------------------------------
-            // 3. ONLY ALLOW SUPPORTED FILE FORMATS
-            // --------------------------------------------------------
-            //
-            // IMPORTANT:
-            // The extension is ONLY used to decide which extraction
-            // method to use.
-            //
-            // It does NOT decide whether the document is an Invoice
-            // or Credit Note.
-            //
-            // The actual CONTENT of the file will decide that later.
-            // --------------------------------------------------------
 
             var allowedExtensions = new[]
             {
@@ -93,10 +73,6 @@ namespace DocumentManagement.API.Controllers
                 });
             }
 
-            // --------------------------------------------------------
-            // 4. CREATE UPLOADS FOLDER
-            // --------------------------------------------------------
-
             var uploadsFolder = Path.Combine(
                 _environment.ContentRootPath,
                 "Uploads");
@@ -105,10 +81,6 @@ namespace DocumentManagement.API.Controllers
             {
                 Directory.CreateDirectory(uploadsFolder);
             }
-
-            // --------------------------------------------------------
-            // 5. GENERATE SAFE SERVER-SIDE FILE NAME
-            // --------------------------------------------------------
 
             var storedFileName =
                 $"{Guid.NewGuid():N}{extension}";
@@ -119,9 +91,9 @@ namespace DocumentManagement.API.Controllers
 
             try
             {
-                // ----------------------------------------------------
-                // 6. SAVE FILE TEMPORARILY
-                // ----------------------------------------------------
+                // ====================================================
+                // SAVE FILE
+                // ====================================================
 
                 await using (var stream = new FileStream(
                     filePath,
@@ -132,9 +104,9 @@ namespace DocumentManagement.API.Controllers
                     await file.CopyToAsync(stream);
                 }
 
-                // ----------------------------------------------------
-                // 7. CALCULATE FILE HASH
-                // ----------------------------------------------------
+                // ====================================================
+                // CALCULATE SHA256 HASH
+                // ====================================================
 
                 string fileHash;
 
@@ -150,9 +122,9 @@ namespace DocumentManagement.API.Controllers
                         Convert.ToHexString(hashBytes);
                 }
 
-                // ----------------------------------------------------
-                // 8. CHECK FOR EXACT DUPLICATE FILE
-                // ----------------------------------------------------
+                // ====================================================
+                // CHECK EXACT FILE DUPLICATE
+                // ====================================================
 
                 var duplicateByFileHash =
                     await _context.Documents.AnyAsync(
@@ -169,17 +141,9 @@ namespace DocumentManagement.API.Controllers
                     });
                 }
 
-                // ----------------------------------------------------
-                // 9. EXTRACT ACTUAL DOCUMENT CONTENT
-                // ----------------------------------------------------
-                //
-                // PDF  -> PdfPig
-                // DOCX -> OpenXML
-                // JPG/JPEG/PNG -> Tesseract OCR
-                //
-                // IMPORTANT:
-                // We do this BEFORE creating a Document record.
-                // ----------------------------------------------------
+                // ====================================================
+                // EXTRACT DOCUMENT CONTENT
+                // ====================================================
 
                 string extractedText;
 
@@ -205,10 +169,6 @@ namespace DocumentManagement.API.Controllers
                     });
                 }
 
-                // ----------------------------------------------------
-                // 10. MAKE SURE CONTENT WAS ACTUALLY EXTRACTED
-                // ----------------------------------------------------
-
                 if (string.IsNullOrWhiteSpace(extractedText))
                 {
                     DeleteFileIfExists(filePath);
@@ -220,34 +180,14 @@ namespace DocumentManagement.API.Controllers
                     });
                 }
 
-                // ----------------------------------------------------
-                // 11. CLASSIFY THE DOCUMENT USING ITS CONTENT
-                // ----------------------------------------------------
-                //
-                // IMPORTANT:
-                //
-                // Filename is NOT used here.
-                //
-                // Example:
-                //
-                // Invoice.pdf containing a CV
-                // -> rejected
-                //
-                // random.pdf containing an Invoice
-                // -> accepted
-                //
-                // The InvoiceExtractionService examines the actual
-                // extracted text.
-                // ----------------------------------------------------
+                // ====================================================
+                // IDENTIFY INVOICE / CREDIT NOTE
+                // ====================================================
 
                 var extractedInvoiceData =
                     _invoiceExtractionService.ExtractInvoiceData(
                         0,
                         extractedText);
-
-                // ----------------------------------------------------
-                // 12. CHECK DOCUMENT TYPE
-                // ----------------------------------------------------
 
                 var documentType =
                     extractedInvoiceData.DocumentType?.Trim();
@@ -264,11 +204,6 @@ namespace DocumentManagement.API.Controllers
                         "Credit Note",
                         StringComparison.OrdinalIgnoreCase);
 
-                // ----------------------------------------------------
-                // 13. REJECT EVERYTHING THAT IS NOT AN INVOICE
-                //     OR CREDIT NOTE
-                // ----------------------------------------------------
-
                 if (!isInvoice && !isCreditNote)
                 {
                     DeleteFileIfExists(filePath);
@@ -280,12 +215,9 @@ namespace DocumentManagement.API.Controllers
                     });
                 }
 
-                // ----------------------------------------------------
-                // 14. CHECK FOR DUPLICATE INVOICE NUMBER
-                // ----------------------------------------------------
-                //
-                // This happens BEFORE creating the database records.
-                // ----------------------------------------------------
+                // ====================================================
+                // CHECK DUPLICATE INVOICE NUMBER
+                // ====================================================
 
                 var normalizedInvoiceNumber =
                     extractedInvoiceData.InvoiceNumber?
@@ -316,84 +248,44 @@ namespace DocumentManagement.API.Controllers
                     }
                 }
 
-                // ----------------------------------------------------
-                // 15. CHECK FOR DUPLICATE VENDOR + AMOUNT
-                // ----------------------------------------------------
-
-                var normalizedVendor =
-                    extractedInvoiceData.Vendor?
-                        .Trim()
-                        .ToLowerInvariant();
-
-                if (!string.IsNullOrWhiteSpace(
-                    normalizedVendor) &&
-                    extractedInvoiceData.Amount.HasValue)
-                {
-                    var duplicateByVendorAndAmount =
-                        await _context.InvoiceData.AnyAsync(i =>
-                            i.Vendor != null &&
-                            i.Vendor
-                                .Trim()
-                                .ToLower() ==
-                                normalizedVendor &&
-                            i.Amount.HasValue &&
-                            i.Amount.Value ==
-                                extractedInvoiceData.Amount.Value);
-
-                    if (duplicateByVendorAndAmount)
-                    {
-                        DeleteFileIfExists(filePath);
-
-                        return Conflict(new
-                        {
-                            message =
-                                "Duplicate document detected. " +
-                                "A document with the same vendor and amount already exists."
-                        });
-                    }
-                }
-
-                // ----------------------------------------------------
-                // 16. GET CURRENT USER
-                // ----------------------------------------------------
+                // ====================================================
+                // GET CURRENT USER
+                // ====================================================
 
                 var userId =
                     User.FindFirstValue(
                         ClaimTypes.NameIdentifier);
 
-                // ----------------------------------------------------
-                // 17. CREATE DOCUMENT
-                // ----------------------------------------------------
-                //
-                // At this point:
-                //
-                // - File format is supported
-                // - File was readable
-                // - Content was extracted
-                // - Content was classified
-                // - Document is Invoice/Credit Note
-                // - Duplicate checks passed
-                //
-                // ONLY NOW do we create database records.
-                // ----------------------------------------------------
+                // ====================================================
+                // CREATE DOCUMENT
+                // ====================================================
 
                 var document = new Document
                 {
                     FileName = originalFileName,
+
                     FileType = file.ContentType,
+
                     FileSize = file.Length,
+
                     FilePath = filePath,
+
                     StoredFileName = storedFileName,
+
                     FileHash = fileHash,
+
                     UploadedAt = DateTime.UtcNow,
+
                     Status = "Pending",
+
                     Description = description,
+
                     UploadedById = userId
                 };
 
-                // ----------------------------------------------------
-                // 18. CREATE INVOICE DATA
-                // ----------------------------------------------------
+                // ====================================================
+                // CREATE INVOICE DATA
+                // ====================================================
 
                 var invoiceData = new InvoiceData
                 {
@@ -427,9 +319,9 @@ namespace DocumentManagement.API.Controllers
                         extractedInvoiceData.ExtractionStatus
                 };
 
-                // ----------------------------------------------------
-                // 19. CREATE APPROVAL WORKFLOW
-                // ----------------------------------------------------
+                // ====================================================
+                // CREATE APPROVAL WORKFLOW
+                // ====================================================
 
                 var approvals = new[]
                 {
@@ -458,9 +350,9 @@ namespace DocumentManagement.API.Controllers
                     }
                 };
 
-                // ----------------------------------------------------
-                // 20. ADD ALL DATABASE RECORDS
-                // ----------------------------------------------------
+                // ====================================================
+                // ADD TO DATABASE
+                // ====================================================
 
                 _context.Documents.Add(document);
 
@@ -468,15 +360,15 @@ namespace DocumentManagement.API.Controllers
 
                 _context.Approvals.AddRange(approvals);
 
-                // ----------------------------------------------------
-                // 21. SAVE EVERYTHING
-                // ----------------------------------------------------
+                // ====================================================
+                // SAVE
+                // ====================================================
 
                 await _context.SaveChangesAsync();
 
-                // ----------------------------------------------------
-                // 22. RETURN SUCCESS RESPONSE
-                // ----------------------------------------------------
+                // ====================================================
+                // RETURN SUCCESS RESPONSE
+                // ====================================================
 
                 return Ok(new
                 {
@@ -511,10 +403,6 @@ namespace DocumentManagement.API.Controllers
             }
             catch (Exception ex)
             {
-                // ----------------------------------------------------
-                // 23. CLEAN UP FILE IF ANY UNEXPECTED ERROR OCCURS
-                // ----------------------------------------------------
-
                 Console.WriteLine(
                     $"Document upload failed: {ex.Message}");
 
@@ -580,71 +468,12 @@ namespace DocumentManagement.API.Controllers
         }
 
         // ============================================================
-        // VIEW DOCUMENT
-        // ============================================================
-
-        [Authorize(Roles = "Admin,Reviewer,Manager,Finance,Viewer")]
-        [HttpGet("{id}/view")]
-        public async Task<IActionResult> ViewDocument(int id)
-        {
-            var document =
-                await _context.Documents
-                    .FirstOrDefaultAsync(d => d.Id == id);
-
-            if (document == null)
-            {
-                return NotFound(new
-                {
-                    message = "Document not found."
-                });
-            }
-
-            if (string.IsNullOrWhiteSpace(
-                document.FilePath))
-            {
-                return NotFound(new
-                {
-                    message =
-                        "Document file path is missing."
-                });
-            }
-
-            if (!System.IO.File.Exists(
-                document.FilePath))
-            {
-                return NotFound(new
-                {
-                    message =
-                        "Document file could not be found."
-                });
-            }
-
-            var fileBytes =
-                await System.IO.File.ReadAllBytesAsync(
-                    document.FilePath);
-
-            var contentType =
-                string.IsNullOrWhiteSpace(
-                    document.FileType)
-                    ? "application/octet-stream"
-                    : document.FileType;
-
-            Response.Headers.ContentDisposition =
-                "inline";
-
-            return File(
-                fileBytes,
-                contentType);
-        }
-
-        // ============================================================
         // DOWNLOAD DOCUMENT
         // ============================================================
 
         [Authorize(Roles = "Admin,Reviewer,Manager,Finance")]
         [HttpGet("{id}/download")]
-        public async Task<IActionResult> DownloadDocument(
-            int id)
+        public async Task<IActionResult> DownloadDocument(int id)
         {
             var document =
                 await _context.Documents
@@ -695,8 +524,7 @@ namespace DocumentManagement.API.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteDocument(
-            int id)
+        public async Task<IActionResult> DeleteDocument(int id)
         {
             var document =
                 await _context.Documents
@@ -765,3 +593,4 @@ namespace DocumentManagement.API.Controllers
         }
     }
 }
+
