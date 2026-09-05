@@ -19,6 +19,10 @@ namespace DocumentManagement.API.Services
             _environment = environment;
         }
 
+        // ============================================================
+        // MAIN EXTRACTION METHOD
+        // ============================================================
+
         public async Task<string> ExtractTextAsync(
             string filePath,
             string fileExtension)
@@ -37,36 +41,63 @@ namespace DocumentManagement.API.Services
                     filePath);
             }
 
-            var extension = fileExtension.Trim().ToLowerInvariant();
+            var extension =
+                fileExtension?
+                    .Trim()
+                    .ToLowerInvariant();
 
             return extension switch
             {
-                ".pdf" => await ExtractPdfTextAsync(filePath),
+                ".pdf" =>
+                    await ExtractPdfTextAsync(filePath),
 
-                ".docx" => await ExtractDocxTextAsync(filePath),
+                ".docx" =>
+                    await ExtractDocxTextAsync(filePath),
 
-                ".jpg" or ".jpeg" or ".png"
-                    => await ExtractImageTextAsync(filePath),
+                ".jpg" or
+                ".jpeg" or
+                ".png" =>
+                    await ExtractImageTextAsync(filePath),
 
-                _ => throw new NotSupportedException(
-                    $"The file type '{extension}' is not supported.")
+                _ =>
+                    throw new NotSupportedException(
+                        $"The file type '{extension}' is not supported.")
             };
         }
 
-        private async Task<string> ExtractPdfTextAsync(string filePath)
+        // ============================================================
+        // PDF
+        // ============================================================
+
+        private async Task<string> ExtractPdfTextAsync(
+            string filePath)
         {
-            return await _pdfTextExtractionService.ExtractTextAsync(filePath);
+            var text =
+                await _pdfTextExtractionService
+                    .ExtractTextAsync(filePath);
+
+            return string.IsNullOrWhiteSpace(text)
+                ? string.Empty
+                : text.Trim();
         }
 
-        private async Task<string> ExtractDocxTextAsync(string filePath)
+        // ============================================================
+        // DOCX
+        // ============================================================
+
+        private async Task<string> ExtractDocxTextAsync(
+            string filePath)
         {
             return await Task.Run(() =>
             {
                 using var document =
-                    WordprocessingDocument.Open(filePath, false);
+                    WordprocessingDocument.Open(
+                        filePath,
+                        false);
 
                 var body =
-                    document.MainDocumentPart?
+                    document
+                        .MainDocumentPart?
                         .Document?
                         .Body;
 
@@ -75,15 +106,17 @@ namespace DocumentManagement.API.Services
                     return string.Empty;
                 }
 
-                var paragraphs = body
-                    .Descendants<Paragraph>()
-                    .Select(paragraph =>
-                        string.Concat(
-                            paragraph
-                                .Descendants<Text>()
-                                .Select(t => t.Text)))
-                    .Where(text =>
-                        !string.IsNullOrWhiteSpace(text));
+                var paragraphs =
+                    body
+                        .Descendants<Paragraph>()
+                        .Select(paragraph =>
+                            string.Concat(
+                                paragraph
+                                    .Descendants<Text>()
+                                    .Select(t => t.Text)))
+                        .Select(text => text.Trim())
+                        .Where(text =>
+                            !string.IsNullOrWhiteSpace(text));
 
                 return string.Join(
                     Environment.NewLine,
@@ -91,7 +124,12 @@ namespace DocumentManagement.API.Services
             });
         }
 
-        private async Task<string> ExtractImageTextAsync(string filePath)
+        // ============================================================
+        // IMAGE / OCR
+        // ============================================================
+
+        private async Task<string> ExtractImageTextAsync(
+            string filePath)
         {
             return await Task.Run(() =>
             {
@@ -104,6 +142,10 @@ namespace DocumentManagement.API.Services
                     Path.Combine(
                         tessDataPath,
                         "eng.traineddata");
+
+                // ----------------------------------------------------
+                // CHECK TESSDATA
+                // ----------------------------------------------------
 
                 if (!Directory.Exists(tessDataPath))
                 {
@@ -118,39 +160,37 @@ namespace DocumentManagement.API.Services
                         trainedDataPath);
                 }
 
+                // ----------------------------------------------------
+                // CREATE OCR ENGINE
+                // ----------------------------------------------------
+
                 using var engine =
                     new Engine(
                         tessDataPath,
                         Language.English,
                         EngineMode.Default);
 
+                // ----------------------------------------------------
+                // LOAD IMAGE
+                // ----------------------------------------------------
+
                 using var image =
                     Image.LoadFromFile(filePath);
 
-                /*
-                 * First OCR pass.
-                 *
-                 * This is the normal/general-purpose
-                 * Tesseract recognition mode.
-                 */
+                // ----------------------------------------------------
+                // OCR PASS
+                // ----------------------------------------------------
+
                 using var page =
                     engine.Process(image);
 
                 var extractedText =
                     page.Text ?? string.Empty;
 
-                /*
-                 * Clean the OCR result without destroying
-                 * line structure.
-                 *
-                 * Line structure is important because invoice
-                 * fields such as:
-                 *
-                 * BILL TO
-                 * ABC COMPANY
-                 *
-                 * are often detected using neighbouring lines.
-                 */
+                // ----------------------------------------------------
+                // CLEAN OCR RESULT
+                // ----------------------------------------------------
+
                 extractedText =
                     CleanOcrText(extractedText);
 
@@ -158,60 +198,58 @@ namespace DocumentManagement.API.Services
             });
         }
 
-        private static string CleanOcrText(string text)
+        // ============================================================
+        // CLEAN OCR TEXT
+        // ============================================================
+
+        private static string CleanOcrText(
+            string text)
         {
             if (string.IsNullOrWhiteSpace(text))
             {
                 return string.Empty;
             }
 
-            text = text
-                .Replace("\r\n", "\n")
-                .Replace("\r", "\n");
-
-            var lines =
+            text =
                 text
-                    .Split('\n')
-                    .Select(line => line.Trim())
-                    .Where(line =>
-                        !string.IsNullOrWhiteSpace(line));
+                    .Replace("\r\n", "\n")
+                    .Replace("\r", "\n");
+
+            var rawLines =
+                text.Split('\n');
 
             var cleanedLines =
                 new List<string>();
 
-            foreach (var line in lines)
+            foreach (var rawLine in rawLines)
             {
-                var cleanedLine =
-                    line
+                if (string.IsNullOrWhiteSpace(rawLine))
+                {
+                    continue;
+                }
+
+                var line =
+                    rawLine
                         .Replace("\t", " ")
+                        .Replace("\u00A0", " ")
                         .Trim();
 
-                while (cleanedLine.Contains("  "))
+                // Collapse repeated spaces.
+                line =
+                    System.Text.RegularExpressions.Regex.Replace(
+                        line,
+                        @" {2,}",
+                        " ");
+
+                if (string.IsNullOrWhiteSpace(line))
                 {
-                    cleanedLine =
-                        cleanedLine.Replace("  ", " ");
+                    continue;
                 }
 
-                if (!string.IsNullOrWhiteSpace(cleanedLine))
-                {
-                    cleanedLines.Add(cleanedLine);
-                }
-            }
+                line =
+                    FixCommonInvoiceOcrErrors(line);
 
-            /*
-             * Fix a few common OCR mistakes in invoice labels.
-             *
-             * Examples:
-             *
-             * BILL T0  -> BILL TO
-             * BILLTO   -> BILL TO
-             * BILLED T0 -> BILLED TO
-             */
-            for (int i = 0; i < cleanedLines.Count; i++)
-            {
-                cleanedLines[i] =
-                    FixCommonInvoiceOcrErrors(
-                        cleanedLines[i]);
+                cleanedLines.Add(line);
             }
 
             return string.Join(
@@ -219,7 +257,12 @@ namespace DocumentManagement.API.Services
                 cleanedLines);
         }
 
-        private static string FixCommonInvoiceOcrErrors(string line)
+        // ============================================================
+        // COMMON OCR CORRECTIONS
+        // ============================================================
+
+        private static string FixCommonInvoiceOcrErrors(
+            string line)
         {
             if (string.IsNullOrWhiteSpace(line))
             {
@@ -228,41 +271,81 @@ namespace DocumentManagement.API.Services
 
             var result = line;
 
-            /*
-             * Only correct obvious invoice labels.
-             * We do NOT globally replace letters in the
-             * document because that could corrupt company names.
-             */
+            // --------------------------------------------------------
+            // BILL TO
+            // --------------------------------------------------------
 
-            result = System.Text.RegularExpressions.Regex.Replace(
-                result,
-                @"^\s*BILL\s*T[O0]\s*:?\s*$",
-                "BILL TO",
-                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            result =
+                System.Text.RegularExpressions.Regex.Replace(
+                    result,
+                    @"^\s*BILL\s*T[O0]\s*:?\s*$",
+                    "BILL TO",
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 
-            result = System.Text.RegularExpressions.Regex.Replace(
-                result,
-                @"^\s*BILLTO\s*:?\s*$",
-                "BILL TO",
-                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            result =
+                System.Text.RegularExpressions.Regex.Replace(
+                    result,
+                    @"^\s*BILLTO\s*:?\s*$",
+                    "BILL TO",
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 
-            result = System.Text.RegularExpressions.Regex.Replace(
-                result,
-                @"^\s*BILLED\s*T[O0]\s*:?\s*$",
-                "BILLED TO",
-                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            result =
+                System.Text.RegularExpressions.Regex.Replace(
+                    result,
+                    @"^\s*BILLED\s*T[O0]\s*:?\s*$",
+                    "BILLED TO",
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 
-            result = System.Text.RegularExpressions.Regex.Replace(
-                result,
-                @"^\s*BILL\s*TO\s*:\s*",
-                "BILL TO: ",
-                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            // --------------------------------------------------------
+            // INVOICE
+            // --------------------------------------------------------
 
-            result = System.Text.RegularExpressions.Regex.Replace(
-                result,
-                @"^\s*BILLED\s*TO\s*:\s*",
-                "BILLED TO: ",
-                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            result =
+                System.Text.RegularExpressions.Regex.Replace(
+                    result,
+                    @"^\s*INVOlCE\b",
+                    "INVOICE",
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+            result =
+                System.Text.RegularExpressions.Regex.Replace(
+                    result,
+                    @"^\s*lnvoice\b",
+                    "INVOICE",
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+            // --------------------------------------------------------
+            // TOTAL
+            // --------------------------------------------------------
+
+            result =
+                System.Text.RegularExpressions.Regex.Replace(
+                    result,
+                    @"^\s*T0TAL\b",
+                    "TOTAL",
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+            // --------------------------------------------------------
+            // VAT
+            // --------------------------------------------------------
+
+            result =
+                System.Text.RegularExpressions.Regex.Replace(
+                    result,
+                    @"^\s*V[A4]T\b",
+                    "VAT",
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+            // --------------------------------------------------------
+            // DATE
+            // --------------------------------------------------------
+
+            result =
+                System.Text.RegularExpressions.Regex.Replace(
+                    result,
+                    @"^\s*D[A4]TE\b",
+                    "DATE",
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 
             return result.Trim();
         }
