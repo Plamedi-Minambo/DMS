@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text;
 using System.Text.RegularExpressions;
 using DocumentManagement.API.Models;
 
@@ -44,21 +43,10 @@ namespace DocumentManagement.API.Services
             // --------------------------------------------------------
             // FALLBACK CALCULATION
             // --------------------------------------------------------
-            //
-            // Some invoices do not explicitly contain a subtotal.
-            //
-            // If we have Total + VAT, we can derive the amount.
-            //
-            // Example:
-            //
-            // Total = R1,150
-            // VAT   = R150
-            //
-            // Amount = R1,000
-            //
-            if (!amount.HasValue &&
-                totalAmount.HasValue &&
-                vat.HasValue &&
+
+            if (amount == null &&
+                totalAmount != null &&
+                vat != null &&
                 totalAmount.Value >= vat.Value)
             {
                 amount = totalAmount.Value - vat.Value;
@@ -71,10 +59,10 @@ namespace DocumentManagement.API.Services
             var hasUsefulInvoiceData =
                 invoiceNumber.HasValue() ||
                 vendor.HasValue() ||
-                invoiceDate.HasValue ||
-                amount.HasValue ||
-                vat.HasValue ||
-                totalAmount.HasValue;
+                invoiceDate != null ||
+                amount != null ||
+                vat != null ||
+                totalAmount != null;
 
             var extractionStatus =
                 documentType == "Invoice" ||
@@ -151,33 +139,27 @@ namespace DocumentManagement.API.Services
 
             var normalized = text;
 
-            // Normalize line endings.
             normalized = normalized
                 .Replace("\r\n", "\n")
                 .Replace("\r", "\n");
 
-            // Replace tabs with spaces.
             normalized = normalized.Replace("\t", " ");
 
-            // Normalize common OCR whitespace.
             normalized = Regex.Replace(
                 normalized,
                 @"[ \u00A0]+",
                 " ");
 
-            // Remove excessive blank lines.
             normalized = Regex.Replace(
                 normalized,
                 @"\n[ \t]*\n[ \t]*\n+",
                 "\n\n");
 
-            // Remove spaces immediately before punctuation.
             normalized = Regex.Replace(
                 normalized,
                 @"\s+([,:;])",
                 "$1");
 
-            // Normalize spaces around colon.
             normalized = Regex.Replace(
                 normalized,
                 @"\s*:\s*",
@@ -229,13 +211,13 @@ namespace DocumentManagement.API.Services
                     creditEvidence++;
                 }
 
-                if (ExtractDate(text).HasValue)
+                if (ExtractDate(text) != null)
                     creditEvidence++;
 
-                if (ExtractTotalAmount(text).HasValue)
+                if (ExtractTotalAmount(text) != null)
                     creditEvidence++;
 
-                if (ExtractVAT(text).HasValue)
+                if (ExtractVAT(text) != null)
                     creditEvidence++;
 
                 if (Regex.IsMatch(
@@ -270,19 +252,19 @@ namespace DocumentManagement.API.Services
 
             var evidence = 0;
 
-            if (ExtractInvoiceNumber(text).HasValue)
+            if (ExtractInvoiceNumber(text).HasValue())
                 evidence++;
 
-            if (ExtractDate(text).HasValue)
+            if (ExtractDate(text) != null)
                 evidence++;
 
-            if (ExtractVendor(text).HasValue)
+            if (ExtractVendor(text).HasValue())
                 evidence++;
 
-            if (ExtractTotalAmount(text).HasValue)
+            if (ExtractTotalAmount(text) != null)
                 evidence++;
 
-            if (ExtractVAT(text).HasValue)
+            if (ExtractVAT(text) != null)
                 evidence++;
 
             if (Regex.IsMatch(
@@ -303,19 +285,15 @@ namespace DocumentManagement.API.Services
                 evidence++;
             }
 
-            // Three or more strong indicators = invoice.
             if (evidence >= 3)
             {
                 return "Invoice";
             }
 
-            // OCR can be imperfect. If the document contains a strong
-            // invoice title plus at least two useful invoice fields,
-            // still allow it to be classified as an invoice.
             if (evidence >= 2 &&
                 (
-                    ExtractInvoiceNumber(text).HasValue ||
-                    ExtractTotalAmount(text).HasValue
+                    ExtractInvoiceNumber(text).HasValue() ||
+                    ExtractTotalAmount(text) != null
                 ))
             {
                 return "Invoice";
@@ -337,25 +315,18 @@ namespace DocumentManagement.API.Services
 
             var patterns = new[]
             {
-                // Invoice Number: INV-12345
                 @"\b(?:invoice|inv\.?)\s*(?:number|no\.?|#)\s*[:\-]?\s*([A-Z0-9][A-Z0-9\/\-_\.]{2,100})",
 
-                // Invoice #: INV-12345
                 @"\binvoice\s*#\s*[:\-]?\s*([A-Z0-9][A-Z0-9\/\-_\.]{2,100})",
 
-                // Invoice: INV-12345
                 @"\binvoice\s*[:\-]\s*([A-Z0-9][A-Z0-9\/\-_\.]{2,100})",
 
-                // Inv: 12345
                 @"\binv\.?\s*[:\-]\s*([A-Z0-9][A-Z0-9\/\-_\.]{2,100})",
 
-                // Invoice No INV-12345
                 @"\binvoice\s+no\s*\.?\s*[:\-]?\s*([A-Z0-9][A-Z0-9\/\-_\.]{2,100})",
 
-                // Credit Note Number
                 @"\bcredit\s*(?:note|memo)\s*(?:number|no\.?|#)\s*[:\-]?\s*([A-Z0-9][A-Z0-9\/\-_\.]{2,100})",
 
-                // OCR sometimes produces "lnvoice" instead of "Invoice".
                 @"\blnvoice\s*(?:number|no\.?|#)\s*[:\-]?\s*([A-Z0-9][A-Z0-9\/\-_\.]{2,100})"
             };
 
@@ -449,10 +420,6 @@ namespace DocumentManagement.API.Services
 
             var lines = GetLines(text);
 
-            // --------------------------------------------------------
-            // LABELLED VENDOR
-            // --------------------------------------------------------
-
             var patterns = new[]
             {
                 @"^\s*(?:vendor|supplier|seller|issued\s+by|from)\s*[:\-]\s*(.+)$",
@@ -491,10 +458,6 @@ namespace DocumentManagement.API.Services
                 }
             }
 
-            // --------------------------------------------------------
-            // COMPANY SUFFIXES
-            // --------------------------------------------------------
-
             foreach (var line in lines)
             {
                 var trimmed = line.Trim();
@@ -518,16 +481,6 @@ namespace DocumentManagement.API.Services
                     }
                 }
             }
-
-            // --------------------------------------------------------
-            // TOP-OF-INVOICE FALLBACK
-            // --------------------------------------------------------
-            //
-            // Many invoices have the company name at the top without
-            // a "Vendor:" label.
-            //
-            // We inspect the first few meaningful lines.
-            // --------------------------------------------------------
 
             var firstLines = lines
                 .Take(Math.Min(8, lines.Count))
@@ -659,7 +612,6 @@ namespace DocumentManagement.API.Services
                 return false;
             }
 
-            // Reject very long financial/textual lines.
             if (value.Length > 120)
             {
                 return false;
@@ -681,16 +633,12 @@ namespace DocumentManagement.API.Services
 
             var patterns = new[]
             {
-                // Invoice Date: 01/09/2026
                 @"\b(?:invoice\s*)?(?:date|dated|issue\s+date|date\s+issued)\s*[:\-]?\s*(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})",
 
-                // Invoice Date: 2026-09-01
                 @"\b(?:invoice\s*)?(?:date|dated|issue\s+date|date\s+issued)\s*[:\-]?\s*(\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2})",
 
-                // Invoice Date: September 1, 2026
                 @"\b(?:invoice\s*)?(?:date|dated|issue\s+date|date\s+issued)\s*[:\-]?\s*([A-Za-z]{3,12}\s+\d{1,2},?\s+\d{4})",
 
-                // Invoice Date: 1 September 2026
                 @"\b(?:invoice\s*)?(?:date|dated|issue\s+date|date\s+issued)\s*[:\-]?\s*(\d{1,2}\s+[A-Za-z]{3,12}\s+\d{4})"
             };
 
@@ -794,7 +742,7 @@ namespace DocumentManagement.API.Services
                 var parsed = ParseMoney(
                     match.Groups[1].Value);
 
-                if (parsed.HasValue)
+                if (parsed != null)
                 {
                     return parsed;
                 }
@@ -816,13 +764,10 @@ namespace DocumentManagement.API.Services
 
             var patterns = new[]
             {
-                // VAT: R150.00
                 @"\bVAT\s*(?:amount)?\s*[:\-]?\s*(?:R|ZAR|\$|€|£)?\s*([0-9][0-9,\.\s]*)",
 
-                // VAT Amount: R150.00
                 @"\b(?:VAT\s+amount|tax\s+amount|sales\s+tax)\s*[:\-]?\s*(?:R|ZAR|\$|€|£)?\s*([0-9][0-9,\.\s]*)",
 
-                // VAT 15% R150.00
                 @"\bVAT\s+\d{1,2}(?:\.\d+)?%\s*(?:R|ZAR|\$|€|£)?\s*([0-9][0-9,\.\s]*)"
             };
 
@@ -842,7 +787,7 @@ namespace DocumentManagement.API.Services
                 var parsed = ParseMoney(
                     match.Groups[1].Value);
 
-                if (parsed.HasValue)
+                if (parsed != null)
                 {
                     return parsed;
                 }
@@ -864,22 +809,16 @@ namespace DocumentManagement.API.Services
 
             var patterns = new[]
             {
-                // Grand Total
                 @"\bgrand\s+total\s*[:\-]?\s*(?:R|ZAR|\$|€|£)?\s*([0-9][0-9,\.\s]*)",
 
-                // Total Amount
                 @"\btotal\s+amount\s*[:\-]?\s*(?:R|ZAR|\$|€|£)?\s*([0-9][0-9,\.\s]*)",
 
-                // Total Due
                 @"\btotal\s+due\s*[:\-]?\s*(?:R|ZAR|\$|€|£)?\s*([0-9][0-9,\.\s]*)",
 
-                // Amount Due
                 @"\bamount\s+due\s*[:\-]?\s*(?:R|ZAR|\$|€|£)?\s*([0-9][0-9,\.\s]*)",
 
-                // Balance Due
                 @"\bbalance\s+due\s*[:\-]?\s*(?:R|ZAR|\$|€|£)?\s*([0-9][0-9,\.\s]*)",
 
-                // Total
                 @"\btotal\s*[:\-]?\s*(?:R|ZAR|\$|€|£)?\s*([0-9][0-9,\.\s]*)"
             };
 
@@ -899,7 +838,7 @@ namespace DocumentManagement.API.Services
                 var parsed = ParseMoney(
                     match.Groups[1].Value);
 
-                if (parsed.HasValue)
+                if (parsed != null)
                 {
                     return parsed;
                 }
@@ -952,7 +891,6 @@ namespace DocumentManagement.API.Services
 
             var cleaned = value.Trim();
 
-            // Remove currency symbols and unwanted characters.
             cleaned = Regex.Replace(
                 cleaned,
                 @"[^\d,\.\-]",
@@ -965,10 +903,6 @@ namespace DocumentManagement.API.Services
 
             cleaned = cleaned.Replace(" ", "");
 
-            // --------------------------------------------------------
-            // BOTH COMMA AND DOT
-            // --------------------------------------------------------
-
             if (cleaned.Contains(',') &&
                 cleaned.Contains('.'))
             {
@@ -980,7 +914,6 @@ namespace DocumentManagement.API.Services
 
                 if (lastComma > lastDot)
                 {
-                    // 1.234,56
                     cleaned = cleaned.Replace(
                         ".",
                         "");
@@ -991,17 +924,11 @@ namespace DocumentManagement.API.Services
                 }
                 else
                 {
-                    // 1,234.56
                     cleaned = cleaned.Replace(
                         ",",
                         "");
                 }
             }
-
-            // --------------------------------------------------------
-            // ONLY COMMA
-            // --------------------------------------------------------
-
             else if (cleaned.Contains(','))
             {
                 var parts =
@@ -1010,31 +937,22 @@ namespace DocumentManagement.API.Services
                 if (parts.Length == 2 &&
                     parts[1].Length == 2)
                 {
-                    // 1234,56
                     cleaned = cleaned.Replace(
                         ",",
                         ".");
                 }
                 else
                 {
-                    // 1,234
                     cleaned = cleaned.Replace(
                         ",",
                         "");
                 }
             }
-
-            // --------------------------------------------------------
-            // ONLY DOT
-            // --------------------------------------------------------
-
             else if (cleaned.Contains('.'))
             {
                 var parts =
                     cleaned.Split('.');
 
-                // Multiple dots normally indicate thousands
-                // separators, e.g. 1.234.567
                 if (parts.Length > 2)
                 {
                     cleaned = cleaned.Replace(
@@ -1139,3 +1057,6 @@ namespace DocumentManagement.API.Services
         }
     }
 }
+
+
+
