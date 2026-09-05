@@ -1,4 +1,3 @@
-
 using System.Globalization;
 using System.Text.RegularExpressions;
 using DocumentManagement.API.Models;
@@ -17,386 +16,149 @@ namespace DocumentManagement.API.Services
         {
             if (string.IsNullOrWhiteSpace(extractedText))
             {
-                return CreateFailedResult(documentId);
+                return new InvoiceData
+                {
+                    DocumentId = documentId,
+                    ExtractionStatus = "Failed",
+                    ExtractedAt = DateTime.UtcNow
+                };
             }
 
-            var normalizedText = NormalizeText(extractedText);
+            var text = NormalizeText(extractedText);
 
-            if (string.IsNullOrWhiteSpace(normalizedText))
+            var invoiceNumber = ExtractInvoiceNumber(text);
+            var vendor = ExtractVendor(text);
+            var invoiceDate = ExtractInvoiceDate(text);
+
+            var amount = ExtractAmount(text);
+            var vat = ExtractVAT(text);
+            var totalAmount = ExtractTotalAmount(text);
+
+            // --------------------------------------------------------
+            // Financial fallback calculations
+            // --------------------------------------------------------
+
+            if (!amount.HasValue && totalAmount.HasValue && vat.HasValue)
             {
-                return CreateFailedResult(documentId);
+                amount = totalAmount.Value - vat.Value;
             }
 
-            var documentType = ExtractDocumentType(normalizedText);
-
-            var invoiceNumber = ExtractInvoiceNumber(normalizedText);
-
-            var vendor = ExtractVendor(normalizedText);
-
-            var invoiceDate = ExtractDate(normalizedText);
-
-            var amount = ExtractAmount(normalizedText);
-
-            var vat = ExtractVAT(normalizedText);
-
-            var totalAmount = ExtractTotalAmount(normalizedText);
-
-            // --------------------------------------------------------
-            // CALCULATE MISSING AMOUNT FROM TOTAL - VAT
-            // --------------------------------------------------------
-
-            if (amount == null &&
-                totalAmount != null &&
-                vat != null &&
-                totalAmount.Value >= vat.Value)
+            if (!totalAmount.HasValue && amount.HasValue && vat.HasValue)
             {
-                amount = decimal.Round(
-                    totalAmount.Value - vat.Value,
-                    2);
+                totalAmount = amount.Value + vat.Value;
             }
-
-            // --------------------------------------------------------
-            // CALCULATE MISSING TOTAL FROM AMOUNT + VAT
-            // --------------------------------------------------------
-
-            if (totalAmount == null &&
-                amount != null &&
-                vat != null)
-            {
-                totalAmount = decimal.Round(
-                    amount.Value + vat.Value,
-                    2);
-            }
-
-            // --------------------------------------------------------
-            // DOCUMENT VALIDATION
-            // --------------------------------------------------------
-
-            var hasUsefulInvoiceData =
-                invoiceNumber.HasValue() ||
-                vendor.HasValue() ||
-                invoiceDate != null ||
-                amount != null ||
-                vat != null ||
-                totalAmount != null;
-
-            var extractionStatus =
-                documentType == "Invoice" ||
-                documentType == "Credit Note"
-                    ? "Completed"
-                    : hasUsefulInvoiceData
-                        ? "Completed"
-                        : "Failed";
 
             return new InvoiceData
             {
                 DocumentId = documentId,
 
-                DocumentType =
-                    documentType,
+                DocumentType = DetermineDocumentType(text),
 
-                InvoiceNumber =
-                    invoiceNumber,
+                InvoiceNumber = invoiceNumber,
 
-                Vendor =
-                    vendor,
+                Vendor = vendor,
 
-                InvoiceDate =
-                    invoiceDate,
+                InvoiceDate = invoiceDate,
 
-                Amount =
-                    amount,
+                Amount = amount,
 
-                VAT =
-                    vat,
+                VAT = vat,
 
-                TotalAmount =
-                    totalAmount,
+                TotalAmount = totalAmount,
 
-                ExtractedAt =
-                    DateTime.UtcNow,
+                ExtractedAt = DateTime.UtcNow,
 
                 ExtractionStatus =
-                    extractionStatus
+                    !string.IsNullOrWhiteSpace(invoiceNumber) ||
+                    !string.IsNullOrWhiteSpace(vendor) ||
+                    invoiceDate.HasValue ||
+                    amount.HasValue ||
+                    vat.HasValue ||
+                    totalAmount.HasValue
+                        ? "Completed"
+                        : "Failed"
             };
         }
 
         // ============================================================
-        // FAILED RESULT
+        // NORMALIZE TEXT
         // ============================================================
 
-        private InvoiceData CreateFailedResult(int documentId)
+        private static string NormalizeText(string text)
         {
-            return new InvoiceData
-            {
-                DocumentId = documentId,
-                DocumentType = null,
-                InvoiceNumber = null,
-                Vendor = null,
-                InvoiceDate = null,
-                Amount = null,
-                VAT = null,
-                TotalAmount = null,
-                ExtractedAt = DateTime.UtcNow,
-                ExtractionStatus = "Failed"
-            };
-        }
+            text = text
+                .Replace("\r\n", "\n")
+                .Replace("\r", "\n")
+                .Replace('\u00A0', ' ');
 
-        // ============================================================
-        // NORMALIZE OCR TEXT
-        // ============================================================
+            var lines = text
+                .Split('\n')
+                .Select(line => line.Trim())
+                .Where(line => !string.IsNullOrWhiteSpace(line))
+                .ToList();
 
-        private string NormalizeText(string text)
-        {
-            if (string.IsNullOrWhiteSpace(text))
+            var cleanedLines = new List<string>();
+
+            foreach (var line in lines)
             {
-                return string.Empty;
+                var cleaned = line;
+
+                cleaned = cleaned
+                    .Replace("T0TAL", "TOTAL", StringComparison.OrdinalIgnoreCase)
+                    .Replace("SUBT0TAL", "SUBTOTAL", StringComparison.OrdinalIgnoreCase)
+                    .Replace("AM0UNT", "AMOUNT", StringComparison.OrdinalIgnoreCase)
+                    .Replace("V4T", "VAT", StringComparison.OrdinalIgnoreCase)
+                    .Replace("VAI", "VAT", StringComparison.OrdinalIgnoreCase);
+
+                cleaned = Regex.Replace(
+                    cleaned,
+                    @"[ \t]+",
+                    " ");
+
+                cleanedLines.Add(cleaned.Trim());
             }
 
-            var normalized = text;
-
-            normalized = normalized
-                .Replace("\r\n", "\n")
-                .Replace("\r", "\n");
-
-            normalized = normalized
-                .Replace("\t", " ");
-
-            normalized = Regex.Replace(
-                normalized,
-                @"[ \u00A0]+",
-                " ");
-
-            normalized = Regex.Replace(
-                normalized,
-                @"\n[ \t]*\n[ \t]*\n+",
-                "\n\n");
-
-            normalized = Regex.Replace(
-                normalized,
-                @"\s+([,:;])",
-                "$1");
-
-            normalized = Regex.Replace(
-                normalized,
-                @"\s*:\s*",
-                ": ");
-
-            // Common OCR mistakes in financial labels.
-            normalized = Regex.Replace(
-                normalized,
-                @"\bT[0O]TAL\b",
-                "TOTAL",
-                RegexOptions.IgnoreCase |
-                RegexOptions.CultureInvariant);
-
-            normalized = Regex.Replace(
-                normalized,
-                @"\bSUBT[0O]TAL\b",
-                "SUBTOTAL",
-                RegexOptions.IgnoreCase |
-                RegexOptions.CultureInvariant);
-
-            normalized = Regex.Replace(
-                normalized,
-                @"\bV[A4]I\b",
-                "VAT",
-                RegexOptions.IgnoreCase |
-                RegexOptions.CultureInvariant);
-
-            normalized = Regex.Replace(
-                normalized,
-                @"\bV[A4]T\b",
-                "VAT",
-                RegexOptions.IgnoreCase |
-                RegexOptions.CultureInvariant);
-
-            normalized = Regex.Replace(
-                normalized,
-                @"\bAM0UNT\b",
-                "AMOUNT",
-                RegexOptions.IgnoreCase |
-                RegexOptions.CultureInvariant);
-
-            return normalized.Trim();
+            return string.Join(
+                Environment.NewLine,
+                cleanedLines);
         }
 
         // ============================================================
         // DOCUMENT TYPE
         // ============================================================
 
-        private string? ExtractDocumentType(string text)
+        private static string DetermineDocumentType(string text)
         {
-            if (string.IsNullOrWhiteSpace(text))
-            {
-                return null;
-            }
-
-            // --------------------------------------------------------
-            // CREDIT NOTE
-            // --------------------------------------------------------
-
-            var creditNoteTitle = Regex.IsMatch(
+            if (Regex.IsMatch(
                 text,
-                @"\b(?:credit\s+note|credit\s+memo|credit\s+invoice)\b",
-                RegexOptions.IgnoreCase |
-                RegexOptions.CultureInvariant);
-
-            if (creditNoteTitle)
+                @"\bCREDIT\s+NOTE\b",
+                RegexOptions.IgnoreCase))
             {
-                var creditEvidence = 0;
-
-                if (Regex.IsMatch(
-                    text,
-                    @"\b(?:credit\s+(?:note|memo)|credit)\s*(?:number|no\.?|#)\b",
-                    RegexOptions.IgnoreCase |
-                    RegexOptions.CultureInvariant))
-                {
-                    creditEvidence++;
-                }
-
-                if (Regex.IsMatch(
-                    text,
-                    @"\b(?:original\s+invoice|invoice\s+(?:number|no\.?|#)|invoice\s+reference)\b",
-                    RegexOptions.IgnoreCase |
-                    RegexOptions.CultureInvariant))
-                {
-                    creditEvidence++;
-                }
-
-                if (ExtractDate(text) != null)
-                {
-                    creditEvidence++;
-                }
-
-                if (ExtractTotalAmount(text) != null)
-                {
-                    creditEvidence++;
-                }
-
-                if (ExtractVAT(text) != null)
-                {
-                    creditEvidence++;
-                }
-
-                if (Regex.IsMatch(
-                    text,
-                    @"\b(?:reason\s+for\s+credit|refund|returned\s+goods|goods\s+returned|credited\s+amount)\b",
-                    RegexOptions.IgnoreCase |
-                    RegexOptions.CultureInvariant))
-                {
-                    creditEvidence++;
-                }
-
-                if (creditEvidence >= 1)
-                {
-                    return "Credit Note";
-                }
-            }
-
-            // --------------------------------------------------------
-            // INVOICE
-            // --------------------------------------------------------
-
-            var invoiceTitle = Regex.IsMatch(
-                text,
-                @"\b(?:tax\s+invoice|invoice|inv\.?)\b",
-                RegexOptions.IgnoreCase |
-                RegexOptions.CultureInvariant);
-
-            if (!invoiceTitle)
-            {
-                return null;
-            }
-
-            var evidence = 0;
-
-            if (ExtractInvoiceNumber(text).HasValue())
-            {
-                evidence++;
-            }
-
-            if (ExtractDate(text) != null)
-            {
-                evidence++;
-            }
-
-            if (ExtractVendor(text).HasValue())
-            {
-                evidence++;
-            }
-
-            if (ExtractTotalAmount(text) != null)
-            {
-                evidence++;
-            }
-
-            if (ExtractVAT(text) != null)
-            {
-                evidence++;
+                return "Credit Note";
             }
 
             if (Regex.IsMatch(
                 text,
-                @"\b(?:bill\s+to|billed\s+to|customer|client|buyer|sold\s+to)\b",
-                RegexOptions.IgnoreCase |
-                RegexOptions.CultureInvariant))
-            {
-                evidence++;
-            }
-
-            if (Regex.IsMatch(
-                text,
-                @"\b(?:subtotal|sub\s*total|amount\s+due|balance\s+due|payment\s+terms|due\s+date)\b",
-                RegexOptions.IgnoreCase |
-                RegexOptions.CultureInvariant))
-            {
-                evidence++;
-            }
-
-            if (evidence >= 3)
+                @"\bINVOICE\b",
+                RegexOptions.IgnoreCase))
             {
                 return "Invoice";
             }
 
-            if (evidence >= 2 &&
-                (
-                    ExtractInvoiceNumber(text).HasValue() ||
-                    ExtractTotalAmount(text) != null
-                ))
-            {
-                return "Invoice";
-            }
-
-            return null;
+            return "Invoice";
         }
 
         // ============================================================
         // INVOICE NUMBER
         // ============================================================
 
-        private string? ExtractInvoiceNumber(string text)
+        private static string? ExtractInvoiceNumber(string text)
         {
-            if (string.IsNullOrWhiteSpace(text))
-            {
-                return null;
-            }
-
             var patterns = new[]
             {
-                @"\b(?:invoice|inv\.?)\s*(?:number|no\.?|#)\s*[:\-]?\s*([A-Z0-9][A-Z0-9\/\-_\.]{2,100})",
+                @"(?:Invoice\s*(?:Number|No\.?|#)|Invoice\s*#)\s*[:\-]?\s*([A-Za-z0-9][A-Za-z0-9\/\-_]*)",
 
-                @"\binvoice\s*#\s*[:\-]?\s*([A-Z0-9][A-Z0-9\/\-_\.]{2,100})",
-
-                @"\binvoice\s*[:\-]\s*([A-Z0-9][A-Z0-9\/\-_\.]{2,100})",
-
-                @"\binv\.?\s*[:\-]\s*([A-Z0-9][A-Z0-9\/\-_\.]{2,100})",
-
-                @"\binvoice\s+no\s*\.?\s*[:\-]?\s*([A-Z0-9][A-Z0-9\/\-_\.]{2,100})",
-
-                @"\bcredit\s*(?:note|memo)\s*(?:number|no\.?|#)\s*[:\-]?\s*([A-Z0-9][A-Z0-9\/\-_\.]{2,100})",
-
-                @"\blnvoice\s*(?:number|no\.?|#)\s*[:\-]?\s*([A-Z0-9][A-Z0-9\/\-_\.]{2,100})"
+                @"(?:Inv\.?\s*(?:Number|No\.?|#))\s*[:\-]?\s*([A-Za-z0-9][A-Za-z0-9\/\-_]*)"
             };
 
             foreach (var pattern in patterns)
@@ -404,331 +166,134 @@ namespace DocumentManagement.API.Services
                 var match = Regex.Match(
                     text,
                     pattern,
-                    RegexOptions.IgnoreCase |
-                    RegexOptions.CultureInvariant);
+                    RegexOptions.IgnoreCase);
 
-                if (!match.Success)
+                if (match.Success)
                 {
-                    continue;
-                }
+                    var value = match.Groups[1].Value.Trim();
 
-                var value = CleanExtractedValue(
-                    match.Groups[1].Value);
+                    // Remove accidental trailing words caused by
+                    // poorly separated PDF text.
+                    value = Regex.Replace(
+                        value,
+                        @"(?i)(Invoice|Date|Due|PO|BILL|TO)$",
+                        "");
 
-                if (IsValidInvoiceNumber(value))
-                {
-                    return value;
+                    value = value.Trim();
+
+                    if (!string.IsNullOrWhiteSpace(value))
+                    {
+                        return value;
+                    }
                 }
             }
 
             return null;
-        }
-
-        // ============================================================
-        // VALIDATE INVOICE NUMBER
-        // ============================================================
-
-        private bool IsValidInvoiceNumber(string? value)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                return false;
-            }
-
-            value = value.Trim();
-
-            if (value.Length < 3 ||
-                value.Length > 100)
-            {
-                return false;
-            }
-
-            if (!Regex.IsMatch(
-                value,
-                @"\d",
-                RegexOptions.CultureInvariant))
-            {
-                return false;
-            }
-
-            var invalidValues = new HashSet<string>(
-                StringComparer.OrdinalIgnoreCase)
-            {
-                "number",
-                "no",
-                "invoice",
-                "inv",
-                "date",
-                "total",
-                "amount",
-                "value",
-                "none",
-                "n/a",
-                "na",
-                "vat"
-            };
-
-            return !invalidValues.Contains(value);
         }
 
         // ============================================================
         // VENDOR
         // ============================================================
 
-        private string? ExtractVendor(string text)
+        private static string? ExtractVendor(string text)
         {
-            if (string.IsNullOrWhiteSpace(text))
-            {
-                return null;
-            }
-
             var lines = GetLines(text);
 
-            var patterns = new[]
+            for (int i = 0; i < lines.Count; i++)
             {
-                @"^\s*(?:vendor|supplier|seller|issued\s+by|from)\s*[:\-]\s*(.+)$",
-
-                @"^\s*(?:company|company\s+name)\s*[:\-]\s*(.+)$",
-
-                @"^\s*(?:bill\s+from|billed\s+from)\s*[:\-]\s*(.+)$",
-
-                @"^\s*(?:seller\s+name)\s*[:\-]\s*(.+)$",
-
-                @"^\s*(?:supplier\s+name)\s*[:\-]\s*(.+)$"
-            };
-
-            foreach (var line in lines)
-            {
-                foreach (var pattern in patterns)
-                {
-                    var match = Regex.Match(
-                        line,
-                        pattern,
-                        RegexOptions.IgnoreCase |
-                        RegexOptions.CultureInvariant);
-
-                    if (!match.Success)
-                    {
-                        continue;
-                    }
-
-                    var vendor = CleanVendor(
-                        match.Groups[1].Value);
-
-                    if (IsValidVendor(vendor))
-                    {
-                        return vendor;
-                    }
-                }
-            }
-
-            foreach (var line in lines)
-            {
-                var trimmed = line.Trim();
-
-                if (trimmed.Length < 3)
-                {
-                    continue;
-                }
+                var line = lines[i].Trim();
 
                 if (Regex.IsMatch(
-                    trimmed,
-                    @"\b(?:Pty|Ltd|Limited|Inc|Incorporated|LLC|CC|Corporation|Corp)\b",
-                    RegexOptions.IgnoreCase |
-                    RegexOptions.CultureInvariant))
+                    line,
+                    @"^BILL\s*TO$",
+                    RegexOptions.IgnoreCase))
                 {
-                    var vendor = CleanVendor(trimmed);
-
-                    if (IsValidVendor(vendor))
+                    for (int j = i + 1; j < lines.Count; j++)
                     {
-                        return vendor;
+                        var candidate = lines[j].Trim();
+
+                        if (string.IsNullOrWhiteSpace(candidate))
+                        {
+                            continue;
+                        }
+
+                        // Stop if the next section starts.
+                        if (Regex.IsMatch(
+                            candidate,
+                            @"^(SHIP\s*TO|PAYMENT|NOTES|DESCRIPTION|#)$",
+                            RegexOptions.IgnoreCase))
+                        {
+                            break;
+                        }
+
+                        // Ignore obvious field/header lines.
+                        if (Regex.IsMatch(
+                            candidate,
+                            @"^(Invoice|Invoice Date|Due Date|PO Number)$",
+                            RegexOptions.IgnoreCase))
+                        {
+                            continue;
+                        }
+
+                        // The first meaningful line after BILL TO
+                        // is the customer/vendor name.
+                        if (!LooksLikeAddress(candidate) &&
+                            !LooksLikeEmailOrPhone(candidate))
+                        {
+                            return candidate;
+                        }
                     }
                 }
             }
 
-            var firstLines = lines
-                .Take(Math.Min(8, lines.Count))
-                .ToList();
+            // Fallback: look for a company-style line after BILL TO
+            var billToMatch = Regex.Match(
+                text,
+                @"BILL\s*TO\s*(?:\r?\n)+([^\r\n]+)",
+                RegexOptions.IgnoreCase);
 
-            foreach (var line in firstLines)
+            if (billToMatch.Success)
             {
-                var candidate = CleanVendor(line);
+                var candidate = billToMatch.Groups[1].Value.Trim();
 
-                if (!IsValidVendor(candidate))
+                if (!string.IsNullOrWhiteSpace(candidate))
                 {
-                    continue;
+                    return candidate;
                 }
-
-                if (LooksLikeInvoiceHeading(candidate))
-                {
-                    continue;
-                }
-
-                if (ContainsFinancialInformation(candidate))
-                {
-                    continue;
-                }
-
-                return candidate;
             }
 
             return null;
         }
 
-        // ============================================================
-        // GET LINES
-        // ============================================================
-
-        private List<string> GetLines(string text)
+        private static bool LooksLikeAddress(string value)
         {
-            return text
-                .Split(
-                    new[] { '\r', '\n' },
-                    StringSplitOptions.RemoveEmptyEntries)
-                .Select(line => line.Trim())
-                .Where(line =>
-                    !string.IsNullOrWhiteSpace(line))
-                .ToList();
+            return Regex.IsMatch(
+                value,
+                @"\b\d{3,5}\b.*(?:road|rd|street|st|avenue|ave|park|drive|dr|lane|ln|way|close|crescent|cres)\b",
+                RegexOptions.IgnoreCase);
+        }
+
+        private static bool LooksLikeEmailOrPhone(string value)
+        {
+            return value.Contains("@") ||
+                   Regex.IsMatch(
+                       value,
+                       @"\b\d{3}[\s\-]?\d{3}[\s\-]?\d{4}\b");
         }
 
         // ============================================================
-        // CLEAN VENDOR
+        // INVOICE DATE
         // ============================================================
 
-        private string CleanVendor(string value)
+        private static DateTime? ExtractInvoiceDate(string text)
         {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                return string.Empty;
-            }
-
-            var cleaned = value.Trim();
-
-            cleaned = Regex.Replace(
-                cleaned,
-                @"\s{2,}",
-                " ");
-
-            cleaned = cleaned.Trim(
-                ' ',
-                ':',
-                '-',
-                '|',
-                '.',
-                ',',
-                ';');
-
-            return cleaned;
-        }
-
-        // ============================================================
-        // VALIDATE VENDOR
-        // ============================================================
-
-        private bool IsValidVendor(string? value)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                return false;
-            }
-
-            if (value.Length < 2 ||
-                value.Length > 255)
-            {
-                return false;
-            }
-
-            var invalidValues = new HashSet<string>(
-                StringComparer.OrdinalIgnoreCase)
-            {
-                "vendor",
-                "supplier",
-                "seller",
-                "company",
-                "company name",
-                "invoice",
-                "tax invoice",
-                "credit note",
-                "customer",
-                "client",
-                "unknown",
-                "n/a",
-                "na",
-                "none",
-                "date",
-                "invoice number",
-                "invoice no",
-                "invoice total",
-                "subtotal",
-                "total",
-                "vat"
-            };
-
-            if (invalidValues.Contains(value.Trim()))
-            {
-                return false;
-            }
-
-            var letters = value.Count(char.IsLetter);
-
-            if (letters < 2)
-            {
-                return false;
-            }
-
-            if (value.Length > 120)
-            {
-                return false;
-            }
-
-            return true;
-        }
-
-        // ============================================================
-        // DATE
-        // ============================================================
-
-        private DateTime? ExtractDate(string text)
-        {
-            if (string.IsNullOrWhiteSpace(text))
-            {
-                return null;
-            }
-
             var patterns = new[]
             {
-                @"\b(?:invoice\s*)?(?:date|dated|issue\s+date|date\s+issued)\s*[:\-]?\s*(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})",
+                @"Invoice\s*Date\s*[:\-]?\s*(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})",
 
-                @"\b(?:invoice\s*)?(?:date|dated|issue\s+date|date\s+issued)\s*[:\-]?\s*(\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2})",
+                @"Invoice\s*Date\s*[:\-]?\s*(\d{1,2}\s+[A-Za-z]{3,9}\s+\d{2,4})",
 
-                @"\b(?:invoice\s*)?(?:date|dated|issue\s+date|date\s+issued)\s*[:\-]?\s*([A-Za-z]{3,12}\s+\d{1,2},?\s+\d{4})",
-
-                @"\b(?:invoice\s*)?(?:date|dated|issue\s+date|date\s+issued)\s*[:\-]?\s*(\d{1,2}\s+[A-Za-z]{3,12}\s+\d{4})"
-            };
-
-            var formats = new[]
-            {
-                "dd/MM/yyyy",
-                "d/M/yyyy",
-
-                "dd-MM-yyyy",
-                "d-M-yyyy",
-
-                "dd.MM.yyyy",
-                "d.M.yyyy",
-
-                "yyyy/MM/dd",
-                "yyyy-MM-dd",
-                "yyyy.MM.dd",
-
-                "MMMM d, yyyy",
-                "MMMM d yyyy",
-
-                "MMM d, yyyy",
-                "MMM d yyyy",
-
-                "d MMMM yyyy",
-                "d MMM yyyy"
+                @"Date\s*[:\-]?\s*(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})"
             };
 
             foreach (var pattern in patterns)
@@ -736,34 +301,48 @@ namespace DocumentManagement.API.Services
                 var match = Regex.Match(
                     text,
                     pattern,
-                    RegexOptions.IgnoreCase |
-                    RegexOptions.CultureInvariant);
+                    RegexOptions.IgnoreCase);
 
                 if (!match.Success)
                 {
                     continue;
                 }
 
-                var dateText =
-                    match.Groups[1].Value.Trim();
+                var value = match.Groups[1].Value.Trim();
+
+                var formats = new[]
+                {
+                    "dd/MM/yyyy",
+                    "d/M/yyyy",
+                    "dd-MM-yyyy",
+                    "d-M-yyyy",
+                    "dd/MM/yy",
+                    "d/M/yy",
+                    "dd-MM-yy",
+                    "d-M-yy",
+                    "dd MMMM yyyy",
+                    "d MMMM yyyy",
+                    "dd MMM yyyy",
+                    "d MMM yyyy"
+                };
 
                 if (DateTime.TryParseExact(
-                    dateText,
+                    value,
                     formats,
                     CultureInfo.InvariantCulture,
-                    DateTimeStyles.AllowWhiteSpaces,
-                    out var exactDate))
+                    DateTimeStyles.None,
+                    out var date))
                 {
-                    return exactDate;
+                    return date;
                 }
 
                 if (DateTime.TryParse(
-                    dateText,
+                    value,
                     CultureInfo.InvariantCulture,
-                    DateTimeStyles.AllowWhiteSpaces,
-                    out var parsedDate))
+                    DateTimeStyles.None,
+                    out date))
                 {
-                    return parsedDate;
+                    return date;
                 }
             }
 
@@ -774,99 +353,83 @@ namespace DocumentManagement.API.Services
         // AMOUNT BEFORE VAT
         // ============================================================
 
-        private decimal? ExtractAmount(string text)
+        private static decimal? ExtractAmount(string text)
         {
-            if (string.IsNullOrWhiteSpace(text))
-            {
-                return null;
-            }
+            var lines = GetLines(text);
 
-            var lines = GetFinancialLines(text);
-
-            // --------------------------------------------------------
-            // FIRST: look for explicit pre-VAT amount labels
-            // --------------------------------------------------------
-
-            var labelPatterns = new[]
-            {
-                @"\bsubtotal\b",
-                @"\bsub\s*total\b",
-                @"\bnet\s+amount\b",
-                @"\bnet\s+total\b",
-                @"\btotal\s+before\s+VAT\b",
-                @"\btotal\s+before\s+tax\b",
-                @"\bamount\s+before\s+VAT\b",
-                @"\bamount\s+before\s+tax\b",
-                @"\bnet\b"
-            };
+            decimal? subtotal = null;
+            decimal? discount = null;
 
             foreach (var line in lines)
             {
-                foreach (var labelPattern in labelPatterns)
-                {
-                    if (!Regex.IsMatch(
-                        line,
-                        labelPattern,
-                        RegexOptions.IgnoreCase |
-                        RegexOptions.CultureInvariant))
-                    {
-                        continue;
-                    }
-
-                    var amount = ExtractNumberNearLabel(
-                        line,
-                        labelPattern);
-
-                    if (amount != null)
-                    {
-                        return amount;
-                    }
-                }
-            }
-
-            // --------------------------------------------------------
-            // SECOND: common "AMOUNT: value" format
-            // --------------------------------------------------------
-
-            foreach (var line in lines)
-            {
-                if (!Regex.IsMatch(
+                if (Regex.IsMatch(
                     line,
-                    @"\bAMOUNT\b",
-                    RegexOptions.IgnoreCase |
-                    RegexOptions.CultureInvariant))
+                    @"^\s*SUBTOTAL\b",
+                    RegexOptions.IgnoreCase))
                 {
-                    continue;
+                    subtotal = ExtractFirstMoneyValue(line);
                 }
 
                 if (Regex.IsMatch(
                     line,
-                    @"\b(?:amount\s+due|balance\s+due)\b",
-                    RegexOptions.IgnoreCase |
-                    RegexOptions.CultureInvariant))
+                    @"^\s*DISCOUNT\b",
+                    RegexOptions.IgnoreCase))
                 {
-                    continue;
-                }
-
-                var amount = ExtractFirstMoneyValue(line);
-
-                if (amount != null)
-                {
-                    return amount;
+                    discount = ExtractFirstMoneyValue(line);
                 }
             }
 
             // --------------------------------------------------------
-            // IMPORTANT:
+            // Most accurate case for this invoice:
             //
-            // We deliberately DO NOT treat "Amount Due" or
-            // "Balance Due" as Amount-before-VAT.
+            // Subtotal 30,850.00
+            // Discount 1,000.00
             //
-            // If Total and VAT are available, the main method will
-            // calculate:
-            //
-            // Amount = Total - VAT
+            // Amount = 29,850.00
             // --------------------------------------------------------
+
+            if (subtotal.HasValue)
+            {
+                if (discount.HasValue)
+                {
+                    return subtotal.Value - discount.Value;
+                }
+
+                return subtotal.Value;
+            }
+
+            // --------------------------------------------------------
+            // Explicit amount labels
+            // --------------------------------------------------------
+
+            var amountPatterns = new[]
+            {
+                @"^\s*(?:NET\s+AMOUNT|AMOUNT\s+BEFORE\s+VAT|TOTAL\s+BEFORE\s+VAT|TOTAL\s+BEFORE\s+TAX)\s*[:\-]?\s*(.+)$",
+
+                @"^\s*AMOUNT\s*[:\-]?\s*(.+)$"
+            };
+
+            foreach (var line in lines)
+            {
+                foreach (var pattern in amountPatterns)
+                {
+                    var match = Regex.Match(
+                        line,
+                        pattern,
+                        RegexOptions.IgnoreCase);
+
+                    if (match.Success)
+                    {
+                        var value = ExtractFirstMoneyValue(
+                            match.Groups[1].Value);
+
+                        if (value.HasValue)
+                        {
+                            return value.Value;
+                        }
+                    }
+                }
+            }
 
             return null;
         }
@@ -875,101 +438,120 @@ namespace DocumentManagement.API.Services
         // VAT
         // ============================================================
 
-        private decimal? ExtractVAT(string text)
+        private static decimal? ExtractVAT(string text)
         {
-            if (string.IsNullOrWhiteSpace(text))
-            {
-                return null;
-            }
-
-            var lines = GetFinancialLines(text);
-
-            // --------------------------------------------------------
-            // VAT LABELS
-            // --------------------------------------------------------
+            var lines = GetLines(text);
 
             foreach (var line in lines)
             {
-                if (!Regex.IsMatch(
+                // NEVER treat VAT registration number as VAT amount.
+                if (Regex.IsMatch(
                     line,
-                    @"\bVAT\b",
-                    RegexOptions.IgnoreCase |
-                    RegexOptions.CultureInvariant))
-                {
-                    continue;
-                }
-
-                // Ignore lines that only contain a VAT percentage
-                // without an actual VAT amount.
-                var values = ExtractMoneyCandidates(line);
-
-                if (values.Count == 0)
+                    @"^\s*VAT\s*(?:NO|NUMBER|REGISTRATION|REGISTRATION\s+NUMBER)\b",
+                    RegexOptions.IgnoreCase))
                 {
                     continue;
                 }
 
                 // ----------------------------------------------------
-                // Remove percentage values such as 15%
+                // Exact format from your invoice:
+                //
+                // Tax (VAT 15%)
+                // 4,477.50
+                //
+                // OR:
+                //
+                // Tax (VAT 15%) 4,477.50
                 // ----------------------------------------------------
 
-                var nonPercentageValues =
-                    values
-                        .Where(candidate =>
-                            !IsPercentageValueNearCandidate(
-                                line,
-                                candidate.Raw))
-                        .ToList();
-
-                if (nonPercentageValues.Count > 0)
+                if (Regex.IsMatch(
+                    line,
+                    @"\bTAX\s*\(\s*VAT\s*\d{1,2}(?:\.\d+)?\s*%\s*\)",
+                    RegexOptions.IgnoreCase))
                 {
-                    // Prefer the final monetary value on a VAT line.
-                    return nonPercentageValues
-                        .OrderByDescending(x => x.Position)
-                        .First()
-                        .Value;
-                }
+                    var value = ExtractMoneyAfterPercentage(line);
 
-                // If the line contained a number but our percentage
-                // detection was uncertain, use the final value.
-                return values
-                    .OrderByDescending(x => x.Position)
-                    .First()
-                    .Value;
+                    if (value.HasValue)
+                    {
+                        return value.Value;
+                    }
+                }
             }
 
             // --------------------------------------------------------
-            // TAX AMOUNT / SALES TAX
+            // Handle cases where PDF extraction split the tax value
+            // onto the following line.
             // --------------------------------------------------------
 
-            var taxPatterns = new[]
+            for (int i = 0; i < lines.Count; i++)
             {
-                @"\btax\s+amount\b",
-                @"\bsales\s+tax\b",
-                @"\btax\b"
+                var line = lines[i];
+
+                if (Regex.IsMatch(
+                    line,
+                    @"\bTAX\s*\(\s*VAT\s*\d{1,2}(?:\.\d+)?\s*%\s*\)",
+                    RegexOptions.IgnoreCase))
+                {
+                    for (int j = i + 1; j < lines.Count; j++)
+                    {
+                        var value = ExtractFirstMoneyValue(lines[j]);
+
+                        if (value.HasValue)
+                        {
+                            return value.Value;
+                        }
+
+                        if (Regex.IsMatch(
+                            lines[j],
+                            @"^(TOTAL|PAYMENT|NOTES|DISCOUNT|SUBTOTAL)",
+                            RegexOptions.IgnoreCase))
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // --------------------------------------------------------
+            // Other VAT formats
+            // --------------------------------------------------------
+
+            var vatPatterns = new[]
+            {
+                @"^\s*VAT\s*(?:AMOUNT)?\s*[:\-]?\s*(.+)$",
+
+                @"^\s*TAX\s*(?:AMOUNT)?\s*[:\-]?\s*(.+)$",
+
+                @"^\s*SALES\s+TAX\s*[:\-]?\s*(.+)$"
             };
 
             foreach (var line in lines)
             {
-                foreach (var pattern in taxPatterns)
+                // Again, never parse VAT registration numbers.
+                if (Regex.IsMatch(
+                    line,
+                    @"^\s*VAT\s*(?:NO|NUMBER|REGISTRATION)",
+                    RegexOptions.IgnoreCase))
                 {
-                    if (!Regex.IsMatch(
+                    continue;
+                }
+
+                foreach (var pattern in vatPatterns)
+                {
+                    var match = Regex.Match(
                         line,
                         pattern,
-                        RegexOptions.IgnoreCase |
-                        RegexOptions.CultureInvariant))
-                    {
-                        continue;
-                    }
+                        RegexOptions.IgnoreCase);
 
-                    var values =
-                        ExtractMoneyCandidates(line);
-
-                    if (values.Count > 0)
+                    if (match.Success)
                     {
-                        return values
-                            .OrderByDescending(x => x.Position)
-                            .First()
-                            .Value;
+                        var value = ExtractFirstMoneyValue(
+                            match.Groups[1].Value);
+
+                        if (value.HasValue)
+                        {
+                            return value.Value;
+                        }
                     }
                 }
             }
@@ -978,102 +560,71 @@ namespace DocumentManagement.API.Services
         }
 
         // ============================================================
-        // TOTAL AMOUNT
+        // TOTAL
         // ============================================================
 
-        private decimal? ExtractTotalAmount(string text)
+        private static decimal? ExtractTotalAmount(string text)
         {
-            if (string.IsNullOrWhiteSpace(text))
-            {
-                return null;
-            }
+            var lines = GetLines(text);
 
-            var lines = GetFinancialLines(text);
-
-            var totalPatterns = new[]
+            var priorityPatterns = new[]
             {
-                @"\bgrand\s+total\b",
-                @"\btotal\s+amount\b",
-                @"\btotal\s+due\b",
-                @"\bamount\s+due\b",
-                @"\bbalance\s+due\b",
-                @"\btotal\b"
+                @"^\s*GRAND\s+TOTAL\s*[:\-]?\s*(.+)$",
+
+                @"^\s*TOTAL\s+AMOUNT\s*[:\-]?\s*(.+)$",
+
+                @"^\s*TOTAL\s+DUE\s*[:\-]?\s*(.+)$",
+
+                @"^\s*AMOUNT\s+DUE\s*[:\-]?\s*(.+)$",
+
+                @"^\s*BALANCE\s+DUE\s*[:\-]?\s*(.+)$"
             };
-
-            // --------------------------------------------------------
-            // FIRST: strongest total labels
-            // --------------------------------------------------------
 
             foreach (var line in lines)
             {
-                foreach (var pattern in totalPatterns.Take(5))
+                foreach (var pattern in priorityPatterns)
                 {
-                    if (!Regex.IsMatch(
+                    var match = Regex.Match(
                         line,
                         pattern,
-                        RegexOptions.IgnoreCase |
-                        RegexOptions.CultureInvariant))
-                    {
-                        continue;
-                    }
+                        RegexOptions.IgnoreCase);
 
-                    // Don't mistake "total before VAT" for the final
-                    // total.
-                    if (Regex.IsMatch(
-                        line,
-                        @"\btotal\s+before\s+(?:VAT|tax)\b",
-                        RegexOptions.IgnoreCase |
-                        RegexOptions.CultureInvariant))
+                    if (match.Success)
                     {
-                        continue;
-                    }
+                        var value = ExtractFirstMoneyValue(
+                            match.Groups[1].Value);
 
-                    var values =
-                        ExtractMoneyCandidates(line);
-
-                    if (values.Count > 0)
-                    {
-                        return values
-                            .OrderByDescending(x => x.Position)
-                            .First()
-                            .Value;
+                        if (value.HasValue)
+                        {
+                            return value.Value;
+                        }
                     }
                 }
             }
 
-            // --------------------------------------------------------
-            // SECOND: normal TOTAL
-            // --------------------------------------------------------
-
+            // Generic TOTAL fallback.
             foreach (var line in lines)
             {
-                if (!Regex.IsMatch(
+                if (Regex.IsMatch(
                     line,
-                    @"\btotal\b",
-                    RegexOptions.IgnoreCase |
-                    RegexOptions.CultureInvariant))
+                    @"^\s*TOTAL\s*$",
+                    RegexOptions.IgnoreCase))
                 {
                     continue;
                 }
 
                 if (Regex.IsMatch(
                     line,
-                    @"\b(?:subtotal|sub\s*total|total\s+before\s+(?:VAT|tax))\b",
-                    RegexOptions.IgnoreCase |
-                    RegexOptions.CultureInvariant))
+                    @"^\s*TOTAL\s*[:\-]",
+                    RegexOptions.IgnoreCase))
                 {
-                    continue;
-                }
+                    var value = ExtractFirstMoneyValue(
+                        line);
 
-                var values =
-                    ExtractMoneyCandidates(line);
-
-                if (values.Count > 0)
-                {
-                    return values
-                        .OrderByDescending(x => x.Position)
-                        .First()
-                        .Value;
+                    if (value.HasValue)
+                    {
+                        return value.Value;
+                    }
                 }
             }
 
@@ -1081,547 +632,210 @@ namespace DocumentManagement.API.Services
         }
 
         // ============================================================
-        // GET FINANCIAL LINES
+        // MONEY EXTRACTION
         // ============================================================
 
-        private List<string> GetFinancialLines(string text)
+        private static decimal? ExtractFirstMoneyValue(string text)
         {
-            return text
-                .Split(
-                    new[] { '\r', '\n' },
-                    StringSplitOptions.RemoveEmptyEntries)
-                .Select(line => line.Trim())
-                .Where(line =>
-                    !string.IsNullOrWhiteSpace(line))
-                .Select(NormalizeFinancialLine)
-                .Where(line =>
-                    Regex.IsMatch(
-                        line,
-                        @"\d",
-                        RegexOptions.CultureInvariant))
-                .ToList();
-        }
-
-        // ============================================================
-        // NORMALIZE FINANCIAL LINE
-        // ============================================================
-
-        private string NormalizeFinancialLine(string line)
-        {
-            if (string.IsNullOrWhiteSpace(line))
-            {
-                return string.Empty;
-            }
-
-            var result = line.Trim();
-
-            // Common OCR errors in labels.
-            result = Regex.Replace(
-                result,
-                @"\bT[0O]TAL\b",
-                "TOTAL",
-                RegexOptions.IgnoreCase |
-                RegexOptions.CultureInvariant);
-
-            result = Regex.Replace(
-                result,
-                @"\bSUBT[0O]TAL\b",
-                "SUBTOTAL",
-                RegexOptions.IgnoreCase |
-                RegexOptions.CultureInvariant);
-
-            result = Regex.Replace(
-                result,
-                @"\bV[A4]T\b",
-                "VAT",
-                RegexOptions.IgnoreCase |
-                RegexOptions.CultureInvariant);
-
-            result = Regex.Replace(
-                result,
-                @"\bVAI\b",
-                "VAT",
-                RegexOptions.IgnoreCase |
-                RegexOptions.CultureInvariant);
-
-            result = Regex.Replace(
-                result,
-                @"\bAM0UNT\b",
-                "AMOUNT",
-                RegexOptions.IgnoreCase |
-                RegexOptions.CultureInvariant);
-
-            result = Regex.Replace(
-                result,
-                @"\s{2,}",
-                " ");
-
-            return result.Trim();
-        }
-
-        // ============================================================
-        // EXTRACT NUMBER NEAR A LABEL
-        // ============================================================
-
-        private decimal? ExtractNumberNearLabel(
-            string line,
-            string labelPattern)
-        {
-            var labelMatch = Regex.Match(
-                line,
-                labelPattern,
-                RegexOptions.IgnoreCase |
-                RegexOptions.CultureInvariant);
-
-            if (!labelMatch.Success)
-            {
-                return null;
-            }
-
-            var remainingText =
-                line.Substring(labelMatch.Index + labelMatch.Length);
-
-            var values =
-                ExtractMoneyCandidates(remainingText);
-
-            if (values.Count == 0)
-            {
-                return null;
-            }
-
-            return values
-                .OrderBy(x => x.Position)
-                .First()
-                .Value;
-        }
-
-        // ============================================================
-        // EXTRACT FIRST MONEY VALUE
-        // ============================================================
-
-        private decimal? ExtractFirstMoneyValue(string text)
-        {
-            var values =
-                ExtractMoneyCandidates(text);
-
-            if (values.Count == 0)
-            {
-                return null;
-            }
-
-            return values
-                .OrderBy(x => x.Position)
-                .First()
-                .Value;
-        }
-
-        // ============================================================
-        // EXTRACT MONEY CANDIDATES
-        // ============================================================
-
-        private List<MoneyCandidate> ExtractMoneyCandidates(
-            string text)
-        {
-            var candidates =
-                new List<MoneyCandidate>();
-
             if (string.IsNullOrWhiteSpace(text))
             {
-                return candidates;
+                return null;
             }
 
-            // --------------------------------------------------------
-            // Matches:
-            //
-            // R 1,250.00
-            // R1,250.00
-            // ZAR 1250.00
-            // $1250.00
-            // 1,250.00
-            // 1 250.00
-            // 1250.00
-            // --------------------------------------------------------
-
-            var pattern =
-                @"(?<![\d%])" +
-                @"(?:(?:R|ZAR|\$|€|£)\s*)?" +
-                @"[-+]?" +
-                @"\d" +
-                @"(?:[\d\s,\.]*\d)?" +
-                @"(?!\s*%)";
-
-            foreach (Match match in Regex.Matches(
+            // Remove percentage values first.
+            var cleaned = Regex.Replace(
                 text,
-                pattern,
-                RegexOptions.IgnoreCase |
-                RegexOptions.CultureInvariant))
+                @"\d+(?:[.,]\d+)?\s*%",
+                "",
+                RegexOptions.IgnoreCase);
+
+            // Currency + number
+            var currencyMatch = Regex.Match(
+                cleaned,
+                @"(?:R|ZAR|\$|€|£)\s*([-+]?\d[\d\s,\.]*\d|\d+)",
+                RegexOptions.IgnoreCase);
+
+            if (currencyMatch.Success)
             {
-                var raw =
-                    match.Value.Trim();
-
-                if (string.IsNullOrWhiteSpace(raw))
-                {
-                    continue;
-                }
-
-                // Skip a standalone percentage.
-                if (raw.Contains("%"))
-                {
-                    continue;
-                }
-
-                var value =
-                    ParseMoney(raw);
-
-                if (value == null)
-                {
-                    continue;
-                }
-
-                // Avoid absurdly large OCR captures.
-                if (Math.Abs(value.Value) > 999999999999m)
-                {
-                    continue;
-                }
-
-                candidates.Add(
-                    new MoneyCandidate
-                    {
-                        Raw = raw,
-                        Value = value.Value,
-                        Position = match.Index
-                    });
+                return ParseMoney(
+                    currencyMatch.Groups[1].Value);
             }
 
-            return candidates;
+            // Decimal / grouped monetary number.
+            var numberMatches = Regex.Matches(
+                cleaned,
+                @"[-+]?\d[\d\s]*(?:[.,]\d{2})(?!\s*%)");
+
+            foreach (Match match in numberMatches)
+            {
+                var value = ParseMoney(match.Value);
+
+                if (value.HasValue)
+                {
+                    return value.Value;
+                }
+            }
+
+            // Integer fallback, but reject obvious IDs.
+            var integerMatches = Regex.Matches(
+                cleaned,
+                @"(?<![\d\-])[-+]?\d[\d\s]*(?![\d\-])");
+
+            foreach (Match match in integerMatches)
+            {
+                var raw = match.Value.Trim();
+
+                if (raw.Length == 0)
+                {
+                    continue;
+                }
+
+                // Don't treat invoice numbers such as 20394
+                // as money.
+                if (raw.Replace(" ", "").Length >= 5 &&
+                    !raw.Contains(",") &&
+                    !raw.Contains("."))
+                {
+                    continue;
+                }
+
+                var value = ParseMoney(raw);
+
+                if (value.HasValue)
+                {
+                    return value.Value;
+                }
+            }
+
+            return null;
         }
 
         // ============================================================
-        // CHECK WHETHER VALUE IS A PERCENTAGE
+        // MONEY AFTER VAT PERCENTAGE
         // ============================================================
 
-        private bool IsPercentageValueNearCandidate(
-            string line,
-            string candidate)
+        private static decimal? ExtractMoneyAfterPercentage(string line)
         {
-            if (string.IsNullOrWhiteSpace(line) ||
-                string.IsNullOrWhiteSpace(candidate))
+            var percentageMatch = Regex.Match(
+                line,
+                @"\d{1,2}(?:\.\d+)?\s*%",
+                RegexOptions.IgnoreCase);
+
+            if (!percentageMatch.Success)
             {
-                return false;
+                return null;
             }
 
-            var index =
-                line.IndexOf(
-                    candidate,
-                    StringComparison.OrdinalIgnoreCase);
-
-            if (index < 0)
-            {
-                return false;
-            }
-
-            var before =
+            var afterPercentage =
                 line.Substring(
-                    Math.Max(0, index - 5),
-                    Math.Min(5, index));
+                    percentageMatch.Index +
+                    percentageMatch.Length);
 
-            var afterStart =
-                index + candidate.Length;
-
-            var after =
-                afterStart < line.Length
-                    ? line.Substring(
-                        afterStart,
-                        Math.Min(
-                            5,
-                            line.Length - afterStart))
-                    : string.Empty;
-
-            return before.Contains("%") ||
-                   after.Contains("%");
+            return ExtractFirstMoneyValue(afterPercentage);
         }
 
         // ============================================================
-        // PARSE MONEY
+        // MONEY PARSER
         // ============================================================
 
-        private decimal? ParseMoney(string value)
+        private static decimal? ParseMoney(string value)
         {
             if (string.IsNullOrWhiteSpace(value))
             {
                 return null;
             }
 
-            var cleaned =
-                value.Trim();
+            value = value
+                .Trim()
+                .Replace("R", "", StringComparison.OrdinalIgnoreCase)
+                .Replace("ZAR", "", StringComparison.OrdinalIgnoreCase)
+                .Replace("$", "")
+                .Replace("€", "")
+                .Replace("£", "")
+                .Replace("\u00A0", "")
+                .Replace(" ", "");
 
-            // Remove currency symbols and other characters.
-            cleaned = Regex.Replace(
-                cleaned,
-                @"[^\d,\.\-\s]",
-                "");
-
-            cleaned =
-                cleaned.Replace(" ", "");
-
-            if (string.IsNullOrWhiteSpace(cleaned))
+            if (value.Length == 0)
             {
                 return null;
             }
 
-            // --------------------------------------------------------
-            // BOTH COMMA AND DOT
-            // --------------------------------------------------------
+            // South African / European format:
+            // 18 500,00
+            // 4.477,50
+            //
+            // Standard English format:
+            // 18,500.00
+            // 4,477.50
 
-            if (cleaned.Contains(',') &&
-                cleaned.Contains('.'))
+            if (value.Contains(',') &&
+                value.Contains('.'))
             {
-                var lastComma =
-                    cleaned.LastIndexOf(',');
+                var lastComma = value.LastIndexOf(',');
+                var lastDot = value.LastIndexOf('.');
 
-                var lastDot =
-                    cleaned.LastIndexOf('.');
-
-                // Example:
-                // 1.250,50
-                //
-                // comma is decimal separator.
                 if (lastComma > lastDot)
                 {
-                    cleaned =
-                        cleaned.Replace(
-                            ".",
-                            "");
-
-                    cleaned =
-                        cleaned.Replace(
-                            ",",
-                            ".");
+                    // 4.477,50
+                    value = value
+                        .Replace(".", "")
+                        .Replace(",", ".");
                 }
                 else
                 {
-                    // Example:
-                    // 1,250.50
-                    //
-                    // dot is decimal separator.
-                    cleaned =
-                        cleaned.Replace(
-                            ",",
-                            "");
+                    // 4,477.50
+                    value = value.Replace(",", "");
                 }
             }
-
-            // --------------------------------------------------------
-            // COMMA ONLY
-            // --------------------------------------------------------
-
-            else if (cleaned.Contains(','))
+            else if (value.Contains(','))
             {
-                var commaParts =
-                    cleaned.Split(',');
+                var parts = value.Split(',');
 
-                // 1250,50 -> 1250.50
-                if (commaParts.Length == 2 &&
-                    commaParts[1].Length == 2)
+                if (parts.Length == 2 &&
+                    parts[1].Length == 2)
                 {
-                    cleaned =
-                        cleaned.Replace(
-                            ",",
-                            ".");
+                    // 18 500,00
+                    value = value.Replace(",", ".");
                 }
                 else
                 {
-                    // 1,250 -> 1250
-                    // 1,250,000 -> 1250000
-                    cleaned =
-                        cleaned.Replace(
-                            ",",
-                            "");
+                    // 30,850
+                    value = value.Replace(",", "");
                 }
             }
-
-            // --------------------------------------------------------
-            // DOT ONLY
-            // --------------------------------------------------------
-
-            else if (cleaned.Contains('.'))
+            else if (value.Count(c => c == '.') > 1)
             {
-                var dotParts =
-                    cleaned.Split('.');
-
-                // 1.250.50 is likely OCR/grouping noise.
-                // Preserve the final two digits as decimals.
-                if (dotParts.Length > 2)
-                {
-                    var lastPart =
-                        dotParts[^1];
-
-                    if (lastPart.Length == 2)
-                    {
-                        var wholePart =
-                            string.Join(
-                                "",
-                                dotParts.Take(
-                                    dotParts.Length - 1));
-
-                        cleaned =
-                            wholePart +
-                            "." +
-                            lastPart;
-                    }
-                    else
-                    {
-                        cleaned =
-                            cleaned.Replace(
-                                ".",
-                                "");
-                    }
-                }
+                // 1.234.567
+                value = value.Replace(".", "");
             }
 
             if (decimal.TryParse(
-                cleaned,
-                NumberStyles.AllowDecimalPoint |
-                NumberStyles.AllowLeadingSign,
+                value,
+                NumberStyles.AllowLeadingSign |
+                NumberStyles.AllowDecimalPoint,
                 CultureInfo.InvariantCulture,
-                out var amount))
+                out var result))
             {
-                return decimal.Round(
-                    amount,
-                    2);
+                return result;
             }
 
             return null;
         }
 
         // ============================================================
-        // GENERIC MONEY EXTRACTION
+        // GET LINES
         // ============================================================
 
-        private decimal? ExtractMoneyValue(
-            string text,
-            string labelPattern)
+        private static List<string> GetLines(string text)
         {
-            if (string.IsNullOrWhiteSpace(text))
-            {
-                return null;
-            }
-
-            var pattern =
-                $@"\b(?:{labelPattern})\s*[:\-]?\s*" +
-                @"(?:R|ZAR|\$|€|£)?\s*" +
-                @"([0-9][0-9,\.\s]*)";
-
-            var match = Regex.Match(
-                text,
-                pattern,
-                RegexOptions.IgnoreCase |
-                RegexOptions.CultureInvariant);
-
-            if (!match.Success)
-            {
-                return null;
-            }
-
-            return ParseMoney(
-                match.Groups[1].Value);
-        }
-
-        // ============================================================
-        // CLEAN EXTRACTED VALUE
-        // ============================================================
-
-        private string CleanExtractedValue(string value)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                return string.Empty;
-            }
-
-            var cleaned =
-                value.Trim();
-
-            cleaned = Regex.Replace(
-                cleaned,
-                @"\s{2,}",
-                " ");
-
-            cleaned = cleaned.Trim(
-                ':',
-                '-',
-                '|',
-                ' ',
-                '.',
-                ',');
-
-            return cleaned;
-        }
-
-        // ============================================================
-        // INVOICE HEADING CHECK
-        // ============================================================
-
-        private bool LooksLikeInvoiceHeading(string value)
-        {
-            return Regex.IsMatch(
-                value,
-                @"^(?:invoice|tax invoice|credit note|invoice number|invoice date|bill to|ship to|customer|vendor|supplier)$",
-                RegexOptions.IgnoreCase |
-                RegexOptions.CultureInvariant);
-        }
-
-        // ============================================================
-        // FINANCIAL INFORMATION CHECK
-        // ============================================================
-
-        private bool ContainsFinancialInformation(string value)
-        {
-            if (Regex.IsMatch(
-                value,
-                @"(?:R|ZAR|\$|€|£)\s*\d",
-                RegexOptions.IgnoreCase |
-                RegexOptions.CultureInvariant))
-            {
-                return true;
-            }
-
-            if (Regex.IsMatch(
-                value,
-                @"\b(?:VAT|subtotal|total|amount|balance|invoice number|invoice date)\b",
-                RegexOptions.IgnoreCase |
-                RegexOptions.CultureInvariant))
-            {
-                return true;
-            }
-
-            return false;
-        }
-
-        // ============================================================
-        // MONEY CANDIDATE CLASS
-        // ============================================================
-
-        private sealed class MoneyCandidate
-        {
-            public string Raw { get; set; } = string.Empty;
-
-            public decimal Value { get; set; }
-
-            public int Position { get; set; }
-        }
-    }
-
-    // ================================================================
-    // STRING EXTENSIONS
-    // ================================================================
-
-    public static class StringExtensions
-    {
-        public static bool HasValue(
-            this string? value)
-        {
-            return !string.IsNullOrWhiteSpace(value);
+            return text
+                .Replace("\r\n", "\n")
+                .Replace("\r", "\n")
+                .Split('\n')
+                .Select(line => line.Trim())
+                .Where(line =>
+                    !string.IsNullOrWhiteSpace(line))
+                .ToList();
         }
     }
 }
-
