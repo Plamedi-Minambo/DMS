@@ -1,4 +1,7 @@
-﻿using UglyToad.PdfPig;
+
+using System.Text;
+using UglyToad.PdfPig;
+using UglyToad.PdfPig.Content;
 
 namespace DocumentManagement.API.Services
 {
@@ -22,18 +25,64 @@ namespace DocumentManagement.API.Services
 
             return await Task.Run(() =>
             {
-                using var pdfDocument =
-                    PdfDocument.Open(filePath);
+                var extractedText = new StringBuilder();
 
-                var extractedText =
-                    new System.Text.StringBuilder();
-
-                foreach (var page in pdfDocument.GetPages())
+                try
                 {
-                    extractedText.AppendLine(page.Text);
+                    using var pdfDocument = PdfDocument.Open(filePath);
+
+                    foreach (Page page in pdfDocument.GetPages())
+                    {
+                        // -------------------------------------------------
+                        // Get words from the PDF instead of relying only
+                        // on page.Text.
+                        // -------------------------------------------------
+
+                        var words = page.GetWords().ToList();
+
+                        if (words.Count > 0)
+                        {
+                            foreach (var word in words)
+                            {
+                                if (!string.IsNullOrWhiteSpace(word.Text))
+                                {
+                                    extractedText.Append(word.Text);
+                                    extractedText.Append(' ');
+                                }
+                            }
+
+                            extractedText.AppendLine();
+                        }
+                        else
+                        {
+                            // Fallback to PdfPig's normal page.Text
+                            // extraction if no words were returned.
+                            string pageText = page.Text;
+
+                            if (!string.IsNullOrWhiteSpace(pageText))
+                            {
+                                extractedText.AppendLine(pageText);
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException(
+                        "An error occurred while extracting text from the PDF.",
+                        ex);
                 }
 
-                return extractedText.ToString();
+                string result = extractedText.ToString().Trim();
+
+                if (string.IsNullOrWhiteSpace(result))
+                {
+                    throw new InvalidOperationException(
+                        "The PDF was opened successfully, but no readable text " +
+                        "could be extracted from it.");
+                }
+
+                return result;
             });
         }
     }
