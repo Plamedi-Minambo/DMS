@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 using DocumentManagement.API.Models;
@@ -17,49 +17,72 @@ namespace DocumentManagement.API.Services
         {
             if (string.IsNullOrWhiteSpace(extractedText))
             {
-                return new InvoiceData
-                {
-                    DocumentId = documentId,
-                    DocumentType = null,
-                    InvoiceNumber = null,
-                    Vendor = null,
-                    InvoiceDate = null,
-                    Amount = null,
-                    VAT = null,
-                    TotalAmount = null,
-                    ExtractedAt = DateTime.UtcNow,
-                    ExtractionStatus = "Failed"
-                };
+                return CreateFailedResult(documentId);
             }
 
             var normalizedText = NormalizeText(extractedText);
 
-            var documentType =
-                ExtractDocumentType(normalizedText);
+            if (string.IsNullOrWhiteSpace(normalizedText))
+            {
+                return CreateFailedResult(documentId);
+            }
 
-            var invoiceNumber =
-                ExtractInvoiceNumber(normalizedText);
+            var documentType = ExtractDocumentType(normalizedText);
 
-            var vendor =
-                ExtractVendor(normalizedText);
+            var invoiceNumber = ExtractInvoiceNumber(normalizedText);
 
-            var invoiceDate =
-                ExtractDate(normalizedText);
+            var vendor = ExtractVendor(normalizedText);
 
-            var amount =
-                ExtractAmount(normalizedText);
+            var invoiceDate = ExtractDate(normalizedText);
 
-            var vat =
-                ExtractVAT(normalizedText);
+            var amount = ExtractAmount(normalizedText);
 
-            var totalAmount =
-                ExtractTotalAmount(normalizedText);
+            var vat = ExtractVAT(normalizedText);
+
+            var totalAmount = ExtractTotalAmount(normalizedText);
+
+            // --------------------------------------------------------
+            // FALLBACK CALCULATION
+            // --------------------------------------------------------
+            //
+            // Some invoices do not explicitly contain a subtotal.
+            //
+            // If we have Total + VAT, we can derive the amount.
+            //
+            // Example:
+            //
+            // Total = R1,150
+            // VAT   = R150
+            //
+            // Amount = R1,000
+            //
+            if (!amount.HasValue &&
+                totalAmount.HasValue &&
+                vat.HasValue &&
+                totalAmount.Value >= vat.Value)
+            {
+                amount = totalAmount.Value - vat.Value;
+            }
+
+            // --------------------------------------------------------
+            // DOCUMENT VALIDATION
+            // --------------------------------------------------------
+
+            var hasUsefulInvoiceData =
+                invoiceNumber.HasValue() ||
+                vendor.HasValue() ||
+                invoiceDate.HasValue ||
+                amount.HasValue ||
+                vat.HasValue ||
+                totalAmount.HasValue;
 
             var extractionStatus =
                 documentType == "Invoice" ||
                 documentType == "Credit Note"
                     ? "Completed"
-                    : "Failed";
+                    : hasUsefulInvoiceData
+                        ? "Completed"
+                        : "Failed";
 
             return new InvoiceData
             {
@@ -95,7 +118,28 @@ namespace DocumentManagement.API.Services
         }
 
         // ============================================================
-        // NORMALIZE TEXT
+        // FAILED RESULT
+        // ============================================================
+
+        private InvoiceData CreateFailedResult(int documentId)
+        {
+            return new InvoiceData
+            {
+                DocumentId = documentId,
+                DocumentType = null,
+                InvoiceNumber = null,
+                Vendor = null,
+                InvoiceDate = null,
+                Amount = null,
+                VAT = null,
+                TotalAmount = null,
+                ExtractedAt = DateTime.UtcNow,
+                ExtractionStatus = "Failed"
+            };
+        }
+
+        // ============================================================
+        // NORMALIZE OCR TEXT
         // ============================================================
 
         private string NormalizeText(string text)
@@ -105,39 +149,45 @@ namespace DocumentManagement.API.Services
                 return string.Empty;
             }
 
-            var normalized =
-                text.Replace("\r\n", "\n")
-                    .Replace("\r", "\n")
-                    .Replace("\t", " ");
+            var normalized = text;
 
-            normalized =
-                Regex.Replace(
-                    normalized,
-                    @"[ ]{2,}",
-                    " ");
+            // Normalize line endings.
+            normalized = normalized
+                .Replace("\r\n", "\n")
+                .Replace("\r", "\n");
 
-            normalized =
-                Regex.Replace(
-                    normalized,
-                    @"\n{3,}",
-                    "\n\n");
+            // Replace tabs with spaces.
+            normalized = normalized.Replace("\t", " ");
+
+            // Normalize common OCR whitespace.
+            normalized = Regex.Replace(
+                normalized,
+                @"[ \u00A0]+",
+                " ");
+
+            // Remove excessive blank lines.
+            normalized = Regex.Replace(
+                normalized,
+                @"\n[ \t]*\n[ \t]*\n+",
+                "\n\n");
+
+            // Remove spaces immediately before punctuation.
+            normalized = Regex.Replace(
+                normalized,
+                @"\s+([,:;])",
+                "$1");
+
+            // Normalize spaces around colon.
+            normalized = Regex.Replace(
+                normalized,
+                @"\s*:\s*",
+                ": ");
 
             return normalized.Trim();
         }
 
         // ============================================================
         // DOCUMENT TYPE
-        // ============================================================
-        //
-        // IMPORTANT:
-        //
-        // The filename is NOT used here.
-        //
-        // The document must contain actual evidence that it is an
-        // Invoice or Credit Note.
-        //
-        // A random document mentioning the word "invoice" should
-        // not automatically be classified as an Invoice.
         // ============================================================
 
         private string? ExtractDocumentType(string text)
@@ -148,171 +198,125 @@ namespace DocumentManagement.API.Services
             }
 
             // --------------------------------------------------------
-            // CREDIT NOTE DETECTION
+            // CREDIT NOTE
             // --------------------------------------------------------
 
-            var hasCreditNoteTitle =
-                Regex.IsMatch(
-                    text,
-                    @"\bcredit\s*(?:note|memo)\b",
-                    RegexOptions.IgnoreCase |
-                    RegexOptions.CultureInvariant);
+            var creditNoteTitle = Regex.IsMatch(
+                text,
+                @"\b(?:credit\s+note|credit\s+memo|credit\s+invoice)\b",
+                RegexOptions.IgnoreCase |
+                RegexOptions.CultureInvariant);
 
-            var hasCreditNoteNumber =
-                Regex.IsMatch(
-                    text,
-                    @"\bcredit\s*(?:note|memo)\s*(?:number|no\.?|#)\s*[:\-]?",
-                    RegexOptions.IgnoreCase |
-                    RegexOptions.CultureInvariant);
-
-            var hasOriginalInvoiceReference =
-                Regex.IsMatch(
-                    text,
-                    @"\b(?:original\s+invoice|invoice\s+(?:number|no\.?|#)|invoice\s+ref(?:erence)?)\b",
-                    RegexOptions.IgnoreCase |
-                    RegexOptions.CultureInvariant);
-
-            var hasDate =
-                Regex.IsMatch(
-                    text,
-                    @"\b(?:invoice\s*)?(?:date|dated|issue\s+date)\b",
-                    RegexOptions.IgnoreCase |
-                    RegexOptions.CultureInvariant);
-
-            var hasVendor =
-                Regex.IsMatch(
-                    text,
-                    @"\b(?:vendor|supplier|seller|issued\s+by|from)\b",
-                    RegexOptions.IgnoreCase |
-                    RegexOptions.CultureInvariant);
-
-            var hasCustomer =
-                Regex.IsMatch(
-                    text,
-                    @"\b(?:customer|client|bill\s+to|sold\s+to|buyer)\b",
-                    RegexOptions.IgnoreCase |
-                    RegexOptions.CultureInvariant);
-
-            var hasAmount =
-                Regex.IsMatch(
-                    text,
-                    @"\b(?:amount|subtotal|sub\s*total|net\s*amount|total\s*(?:amount|due)?|grand\s*total|balance\s*due|credit\s*amount)\b",
-                    RegexOptions.IgnoreCase |
-                    RegexOptions.CultureInvariant);
-
-            var hasVAT =
-                Regex.IsMatch(
-                    text,
-                    @"\b(?:VAT|tax|sales\s+tax)\b",
-                    RegexOptions.IgnoreCase |
-                    RegexOptions.CultureInvariant);
-
-            var hasCreditReason =
-                Regex.IsMatch(
-                    text,
-                    @"\b(?:reason\s+for\s+credit|credit\s+reason|returned\s+goods|goods\s+returned|refund|refund\s+amount|credited\s+amount|overpayment|damaged\s+goods|incorrect\s+invoice)\b",
-                    RegexOptions.IgnoreCase |
-                    RegexOptions.CultureInvariant);
-
-            var creditSupportingEvidence = 0;
-
-            if (hasCreditNoteNumber)
-                creditSupportingEvidence++;
-
-            if (hasOriginalInvoiceReference)
-                creditSupportingEvidence++;
-
-            if (hasDate)
-                creditSupportingEvidence++;
-
-            if (hasVendor)
-                creditSupportingEvidence++;
-
-            if (hasCustomer)
-                creditSupportingEvidence++;
-
-            if (hasAmount)
-                creditSupportingEvidence++;
-
-            if (hasVAT)
-                creditSupportingEvidence++;
-
-            if (hasCreditReason)
-                creditSupportingEvidence++;
-
-            // A Credit Note must have a strong title AND at least
-            // two pieces of supporting document evidence.
-            if (hasCreditNoteTitle &&
-                creditSupportingEvidence >= 2)
+            if (creditNoteTitle)
             {
-                return "Credit Note";
+                var creditEvidence = 0;
+
+                if (Regex.IsMatch(
+                    text,
+                    @"\b(?:credit\s+(?:note|memo)|credit)\s*(?:number|no\.?|#)\b",
+                    RegexOptions.IgnoreCase |
+                    RegexOptions.CultureInvariant))
+                {
+                    creditEvidence++;
+                }
+
+                if (Regex.IsMatch(
+                    text,
+                    @"\b(?:original\s+invoice|invoice\s+(?:number|no\.?|#)|invoice\s+reference)\b",
+                    RegexOptions.IgnoreCase |
+                    RegexOptions.CultureInvariant))
+                {
+                    creditEvidence++;
+                }
+
+                if (ExtractDate(text).HasValue)
+                    creditEvidence++;
+
+                if (ExtractTotalAmount(text).HasValue)
+                    creditEvidence++;
+
+                if (ExtractVAT(text).HasValue)
+                    creditEvidence++;
+
+                if (Regex.IsMatch(
+                    text,
+                    @"\b(?:reason\s+for\s+credit|refund|returned\s+goods|goods\s+returned|credited\s+amount)\b",
+                    RegexOptions.IgnoreCase |
+                    RegexOptions.CultureInvariant))
+                {
+                    creditEvidence++;
+                }
+
+                if (creditEvidence >= 1)
+                {
+                    return "Credit Note";
+                }
             }
 
             // --------------------------------------------------------
-            // INVOICE DETECTION
+            // INVOICE
             // --------------------------------------------------------
 
-            var hasInvoiceTitle =
-                Regex.IsMatch(
-                    text,
-                    @"\b(?:tax\s+invoice|invoice)\b",
-                    RegexOptions.IgnoreCase |
-                    RegexOptions.CultureInvariant);
+            var invoiceTitle = Regex.IsMatch(
+                text,
+                @"\b(?:tax\s+invoice|invoice|inv\.?)\b",
+                RegexOptions.IgnoreCase |
+                RegexOptions.CultureInvariant);
 
-            var hasInvoiceNumber =
-                Regex.IsMatch(
-                    text,
-                    @"\b(?:invoice|inv\.?)\s*(?:number|no\.?|#)\s*[:\-]?",
-                    RegexOptions.IgnoreCase |
-                    RegexOptions.CultureInvariant);
+            if (!invoiceTitle)
+            {
+                return null;
+            }
 
-            var hasPurchaseOrder =
-                Regex.IsMatch(
-                    text,
-                    @"\b(?:purchase\s+order|PO)\s*(?:number|no\.?|#)?\b",
-                    RegexOptions.IgnoreCase |
-                    RegexOptions.CultureInvariant);
+            var evidence = 0;
 
-            var hasPaymentTerms =
-                Regex.IsMatch(
-                    text,
-                    @"\b(?:payment\s+terms|terms\s+of\s+payment|due\s+date|payment\s+due)\b",
-                    RegexOptions.IgnoreCase |
-                    RegexOptions.CultureInvariant);
+            if (ExtractInvoiceNumber(text).HasValue)
+                evidence++;
 
-            var invoiceSupportingEvidence = 0;
+            if (ExtractDate(text).HasValue)
+                evidence++;
 
-            if (hasInvoiceNumber)
-                invoiceSupportingEvidence++;
+            if (ExtractVendor(text).HasValue)
+                evidence++;
 
-            if (hasDate)
-                invoiceSupportingEvidence++;
+            if (ExtractTotalAmount(text).HasValue)
+                evidence++;
 
-            if (hasVendor)
-                invoiceSupportingEvidence++;
+            if (ExtractVAT(text).HasValue)
+                evidence++;
 
-            if (hasCustomer)
-                invoiceSupportingEvidence++;
+            if (Regex.IsMatch(
+                text,
+                @"\b(?:bill\s+to|billed\s+to|customer|client|buyer|sold\s+to)\b",
+                RegexOptions.IgnoreCase |
+                RegexOptions.CultureInvariant))
+            {
+                evidence++;
+            }
 
-            if (hasAmount)
-                invoiceSupportingEvidence++;
+            if (Regex.IsMatch(
+                text,
+                @"\b(?:subtotal|sub\s*total|amount\s+due|balance\s+due|payment\s+terms|due\s+date)\b",
+                RegexOptions.IgnoreCase |
+                RegexOptions.CultureInvariant))
+            {
+                evidence++;
+            }
 
-            if (hasVAT)
-                invoiceSupportingEvidence++;
+            // Three or more strong indicators = invoice.
+            if (evidence >= 3)
+            {
+                return "Invoice";
+            }
 
-            if (hasPurchaseOrder)
-                invoiceSupportingEvidence++;
-
-            if (hasPaymentTerms)
-                invoiceSupportingEvidence++;
-
-            // An Invoice must contain the invoice title plus at least
-            // three supporting indicators.
-            //
-            // This is deliberately stricter than simply searching
-            // for the word "invoice".
-            if (hasInvoiceTitle &&
-                invoiceSupportingEvidence >= 3)
+            // OCR can be imperfect. If the document contains a strong
+            // invoice title plus at least two useful invoice fields,
+            // still allow it to be classified as an invoice.
+            if (evidence >= 2 &&
+                (
+                    ExtractInvoiceNumber(text).HasValue ||
+                    ExtractTotalAmount(text).HasValue
+                ))
             {
                 return "Invoice";
             }
@@ -333,33 +337,43 @@ namespace DocumentManagement.API.Services
 
             var patterns = new[]
             {
-                @"\b(?:invoice|inv\.?)\s*(?:number|no\.?|#)\s*[:\-]?\s*([A-Z0-9][A-Z0-9\/\-_\.]{2,})",
+                // Invoice Number: INV-12345
+                @"\b(?:invoice|inv\.?)\s*(?:number|no\.?|#)\s*[:\-]?\s*([A-Z0-9][A-Z0-9\/\-_\.]{2,100})",
 
-                @"\binvoice\s*[:\-]\s*([A-Z0-9][A-Z0-9\/\-_\.]{2,})",
+                // Invoice #: INV-12345
+                @"\binvoice\s*#\s*[:\-]?\s*([A-Z0-9][A-Z0-9\/\-_\.]{2,100})",
 
-                @"\binv\.?\s*[:\-]\s*([A-Z0-9][A-Z0-9\/\-_\.]{2,})",
+                // Invoice: INV-12345
+                @"\binvoice\s*[:\-]\s*([A-Z0-9][A-Z0-9\/\-_\.]{2,100})",
 
-                @"\b(?:credit\s*note|credit\s*memo)\s*(?:number|no\.?|#)\s*[:\-]?\s*([A-Z0-9][A-Z0-9\/\-_\.]{2,})",
+                // Inv: 12345
+                @"\binv\.?\s*[:\-]\s*([A-Z0-9][A-Z0-9\/\-_\.]{2,100})",
 
-                @"\b(?:credit\s*note|credit\s*memo)\s*[:\-]\s*([A-Z0-9][A-Z0-9\/\-_\.]{2,})"
+                // Invoice No INV-12345
+                @"\binvoice\s+no\s*\.?\s*[:\-]?\s*([A-Z0-9][A-Z0-9\/\-_\.]{2,100})",
+
+                // Credit Note Number
+                @"\bcredit\s*(?:note|memo)\s*(?:number|no\.?|#)\s*[:\-]?\s*([A-Z0-9][A-Z0-9\/\-_\.]{2,100})",
+
+                // OCR sometimes produces "lnvoice" instead of "Invoice".
+                @"\blnvoice\s*(?:number|no\.?|#)\s*[:\-]?\s*([A-Z0-9][A-Z0-9\/\-_\.]{2,100})"
             };
 
             foreach (var pattern in patterns)
             {
-                var match =
-                    Regex.Match(
-                        text,
-                        pattern,
-                        RegexOptions.IgnoreCase |
-                        RegexOptions.CultureInvariant);
+                var match = Regex.Match(
+                    text,
+                    pattern,
+                    RegexOptions.IgnoreCase |
+                    RegexOptions.CultureInvariant);
 
                 if (!match.Success)
                 {
                     continue;
                 }
 
-                var value =
-                    match.Groups[1].Value.Trim();
+                var value = CleanExtractedValue(
+                    match.Groups[1].Value);
 
                 if (IsValidInvoiceNumber(value))
                 {
@@ -374,12 +388,14 @@ namespace DocumentManagement.API.Services
         // VALIDATE INVOICE NUMBER
         // ============================================================
 
-        private bool IsValidInvoiceNumber(string value)
+        private bool IsValidInvoiceNumber(string? value)
         {
             if (string.IsNullOrWhiteSpace(value))
             {
                 return false;
             }
+
+            value = value.Trim();
 
             if (value.Length < 3 ||
                 value.Length > 100)
@@ -387,7 +403,6 @@ namespace DocumentManagement.API.Services
                 return false;
             }
 
-            // Must contain at least one digit.
             if (!Regex.IsMatch(
                 value,
                 @"\d",
@@ -396,8 +411,8 @@ namespace DocumentManagement.API.Services
                 return false;
             }
 
-            // Prevent common false positives.
-            var invalidValues = new[]
+            var invalidValues = new HashSet<string>(
+                StringComparer.OrdinalIgnoreCase)
             {
                 "number",
                 "no",
@@ -408,11 +423,12 @@ namespace DocumentManagement.API.Services
                 "amount",
                 "value",
                 "none",
-                "n/a"
+                "n/a",
+                "na",
+                "vat"
             };
 
-            if (invalidValues.Contains(
-                value.Trim().ToLowerInvariant()))
+            if (invalidValues.Contains(value))
             {
                 return false;
             }
@@ -433,34 +449,40 @@ namespace DocumentManagement.API.Services
 
             var lines = GetLines(text);
 
+            // --------------------------------------------------------
+            // LABELLED VENDOR
+            // --------------------------------------------------------
+
             var patterns = new[]
             {
                 @"^\s*(?:vendor|supplier|seller|issued\s+by|from)\s*[:\-]\s*(.+)$",
 
                 @"^\s*(?:company|company\s+name)\s*[:\-]\s*(.+)$",
 
-                @"^\s*(?:bill\s+from|billed\s+from)\s*[:\-]\s*(.+)$"
+                @"^\s*(?:bill\s+from|billed\s+from)\s*[:\-]\s*(.+)$",
+
+                @"^\s*(?:seller\s+name)\s*[:\-]\s*(.+)$",
+
+                @"^\s*(?:supplier\s+name)\s*[:\-]\s*(.+)$"
             };
 
             foreach (var line in lines)
             {
                 foreach (var pattern in patterns)
                 {
-                    var match =
-                        Regex.Match(
-                            line,
-                            pattern,
-                            RegexOptions.IgnoreCase |
-                            RegexOptions.CultureInvariant);
+                    var match = Regex.Match(
+                        line,
+                        pattern,
+                        RegexOptions.IgnoreCase |
+                        RegexOptions.CultureInvariant);
 
                     if (!match.Success)
                     {
                         continue;
                     }
 
-                    var vendor =
-                        CleanVendor(
-                            match.Groups[1].Value);
+                    var vendor = CleanVendor(
+                        match.Groups[1].Value);
 
                     if (IsValidVendor(vendor))
                     {
@@ -469,26 +491,68 @@ namespace DocumentManagement.API.Services
                 }
             }
 
-            // Look for common business suffixes.
+            // --------------------------------------------------------
+            // COMPANY SUFFIXES
+            // --------------------------------------------------------
+
             foreach (var line in lines)
             {
-                var trimmedLine =
-                    line.Trim();
+                var trimmed = line.Trim();
+
+                if (trimmed.Length < 3)
+                {
+                    continue;
+                }
 
                 if (Regex.IsMatch(
-                    trimmedLine,
+                    trimmed,
                     @"\b(?:Pty|Ltd|Limited|Inc|Incorporated|LLC|CC|Corporation|Corp)\b",
                     RegexOptions.IgnoreCase |
                     RegexOptions.CultureInvariant))
                 {
-                    var vendor =
-                        CleanVendor(trimmedLine);
+                    var vendor = CleanVendor(trimmed);
 
                     if (IsValidVendor(vendor))
                     {
                         return vendor;
                     }
                 }
+            }
+
+            // --------------------------------------------------------
+            // TOP-OF-INVOICE FALLBACK
+            // --------------------------------------------------------
+            //
+            // Many invoices have the company name at the top without
+            // a "Vendor:" label.
+            //
+            // We inspect the first few meaningful lines.
+            // --------------------------------------------------------
+
+            var firstLines = lines
+                .Take(Math.Min(8, lines.Count))
+                .ToList();
+
+            foreach (var line in firstLines)
+            {
+                var candidate = CleanVendor(line);
+
+                if (!IsValidVendor(candidate))
+                {
+                    continue;
+                }
+
+                if (LooksLikeInvoiceHeading(candidate))
+                {
+                    continue;
+                }
+
+                if (ContainsFinancialInformation(candidate))
+                {
+                    continue;
+                }
+
+                return candidate;
             }
 
             return null;
@@ -521,24 +585,21 @@ namespace DocumentManagement.API.Services
                 return string.Empty;
             }
 
-            var cleaned =
-                value.Trim();
+            var cleaned = value.Trim();
 
-            cleaned =
-                Regex.Replace(
-                    cleaned,
-                    @"\s{2,}",
-                    " ");
+            cleaned = Regex.Replace(
+                cleaned,
+                @"\s{2,}",
+                " ");
 
-            cleaned =
-                cleaned.Trim(
-                    ' ',
-                    ':',
-                    '-',
-                    '|',
-                    '.',
-                    ',',
-                    ';');
+            cleaned = cleaned.Trim(
+                ' ',
+                ':',
+                '-',
+                '|',
+                '.',
+                ',',
+                ';');
 
             return cleaned;
         }
@@ -560,7 +621,8 @@ namespace DocumentManagement.API.Services
                 return false;
             }
 
-            var invalidValues = new[]
+            var invalidValues = new HashSet<string>(
+                StringComparer.OrdinalIgnoreCase)
             {
                 "vendor",
                 "supplier",
@@ -574,20 +636,31 @@ namespace DocumentManagement.API.Services
                 "client",
                 "unknown",
                 "n/a",
-                "none"
+                "na",
+                "none",
+                "date",
+                "invoice number",
+                "invoice no",
+                "invoice total",
+                "subtotal",
+                "total",
+                "vat"
             };
 
-            if (invalidValues.Contains(
-                value.Trim().ToLowerInvariant()))
+            if (invalidValues.Contains(value.Trim()))
             {
                 return false;
             }
 
-            // Reject lines that are almost entirely numeric.
-            var letters =
-                value.Count(char.IsLetter);
+            var letters = value.Count(char.IsLetter);
 
             if (letters < 2)
+            {
+                return false;
+            }
+
+            // Reject very long financial/textual lines.
+            if (value.Length > 120)
             {
                 return false;
             }
@@ -608,23 +681,51 @@ namespace DocumentManagement.API.Services
 
             var patterns = new[]
             {
-                @"\b(?:invoice\s*)?(?:date|dated|issue\s+date)\s*[:\-]?\s*(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})",
+                // Invoice Date: 01/09/2026
+                @"\b(?:invoice\s*)?(?:date|dated|issue\s+date|date\s+issued)\s*[:\-]?\s*(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})",
 
-                @"\b(?:invoice\s*)?(?:date|dated|issue\s+date)\s*[:\-]?\s*(\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2})",
+                // Invoice Date: 2026-09-01
+                @"\b(?:invoice\s*)?(?:date|dated|issue\s+date|date\s+issued)\s*[:\-]?\s*(\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2})",
 
-                @"\b(?:invoice\s*)?(?:date|dated|issue\s+date)\s*[:\-]?\s*([A-Za-z]{3,9}\s+\d{1,2},?\s+\d{4})",
+                // Invoice Date: September 1, 2026
+                @"\b(?:invoice\s*)?(?:date|dated|issue\s+date|date\s+issued)\s*[:\-]?\s*([A-Za-z]{3,12}\s+\d{1,2},?\s+\d{4})",
 
-                @"\b(?:invoice\s*)?(?:date|dated|issue\s+date)\s*[:\-]?\s*(\d{1,2}\s+[A-Za-z]{3,9}\s+\d{4})"
+                // Invoice Date: 1 September 2026
+                @"\b(?:invoice\s*)?(?:date|dated|issue\s+date|date\s+issued)\s*[:\-]?\s*(\d{1,2}\s+[A-Za-z]{3,12}\s+\d{4})"
+            };
+
+            var formats = new[]
+            {
+                "dd/MM/yyyy",
+                "d/M/yyyy",
+
+                "dd-MM-yyyy",
+                "d-M-yyyy",
+
+                "dd.MM.yyyy",
+                "d.M.yyyy",
+
+                "yyyy/MM/dd",
+                "yyyy-MM-dd",
+                "yyyy.MM.dd",
+
+                "MMMM d, yyyy",
+                "MMMM d yyyy",
+
+                "MMM d, yyyy",
+                "MMM d yyyy",
+
+                "d MMMM yyyy",
+                "d MMM yyyy"
             };
 
             foreach (var pattern in patterns)
             {
-                var match =
-                    Regex.Match(
-                        text,
-                        pattern,
-                        RegexOptions.IgnoreCase |
-                        RegexOptions.CultureInvariant);
+                var match = Regex.Match(
+                    text,
+                    pattern,
+                    RegexOptions.IgnoreCase |
+                    RegexOptions.CultureInvariant);
 
                 if (!match.Success)
                 {
@@ -633,22 +734,6 @@ namespace DocumentManagement.API.Services
 
                 var dateText =
                     match.Groups[1].Value.Trim();
-
-                var formats = new[]
-                {
-                    "dd/MM/yyyy",
-                    "d/M/yyyy",
-                    "dd-MM-yyyy",
-                    "d-M-yyyy",
-                    "yyyy/MM/dd",
-                    "yyyy-MM-dd",
-                    "MMMM d, yyyy",
-                    "MMMM d yyyy",
-                    "MMM d, yyyy",
-                    "MMM d yyyy",
-                    "d MMMM yyyy",
-                    "d MMM yyyy"
-                };
 
                 if (DateTime.TryParseExact(
                     dateText,
@@ -686,30 +771,28 @@ namespace DocumentManagement.API.Services
 
             var patterns = new[]
             {
-                @"\b(?:amount|subtotal|sub\s*total|net\s*amount)\s*[:\-]?\s*(R|\$|€|£)?\s*([0-9][0-9,\.\s]*)",
+                @"\b(?:amount|subtotal|sub\s*total|net\s*amount|net)\s*[:\-]?\s*(?:R|ZAR|\$|€|£)?\s*([0-9][0-9,\.\s]*)",
 
-                @"\b(?:amount\s+due|balance\s+due)\s*[:\-]?\s*(R|\$|€|£)?\s*([0-9][0-9,\.\s]*)"
+                @"\b(?:amount\s+due|balance\s+due)\s*[:\-]?\s*(?:R|ZAR|\$|€|£)?\s*([0-9][0-9,\.\s]*)",
+
+                @"\b(?:total\s+before\s+VAT|total\s+before\s+tax)\s*[:\-]?\s*(?:R|ZAR|\$|€|£)?\s*([0-9][0-9,\.\s]*)"
             };
 
             foreach (var pattern in patterns)
             {
-                var match =
-                    Regex.Match(
-                        text,
-                        pattern,
-                        RegexOptions.IgnoreCase |
-                        RegexOptions.CultureInvariant);
+                var match = Regex.Match(
+                    text,
+                    pattern,
+                    RegexOptions.IgnoreCase |
+                    RegexOptions.CultureInvariant);
 
                 if (!match.Success)
                 {
                     continue;
                 }
 
-                var value =
-                    match.Groups[2].Value.Trim();
-
-                var parsed =
-                    ParseMoney(value);
+                var parsed = ParseMoney(
+                    match.Groups[1].Value);
 
                 if (parsed.HasValue)
                 {
@@ -733,30 +816,31 @@ namespace DocumentManagement.API.Services
 
             var patterns = new[]
             {
-                @"\bVAT\s*[:\-]?\s*(R|\$|€|£)?\s*([0-9][0-9,\.\s]*)",
+                // VAT: R150.00
+                @"\bVAT\s*(?:amount)?\s*[:\-]?\s*(?:R|ZAR|\$|€|£)?\s*([0-9][0-9,\.\s]*)",
 
-                @"\b(?:VAT\s+amount|tax\s+amount|sales\s+tax)\s*[:\-]?\s*(R|\$|€|£)?\s*([0-9][0-9,\.\s]*)"
+                // VAT Amount: R150.00
+                @"\b(?:VAT\s+amount|tax\s+amount|sales\s+tax)\s*[:\-]?\s*(?:R|ZAR|\$|€|£)?\s*([0-9][0-9,\.\s]*)",
+
+                // VAT 15% R150.00
+                @"\bVAT\s+\d{1,2}(?:\.\d+)?%\s*(?:R|ZAR|\$|€|£)?\s*([0-9][0-9,\.\s]*)"
             };
 
             foreach (var pattern in patterns)
             {
-                var match =
-                    Regex.Match(
-                        text,
-                        pattern,
-                        RegexOptions.IgnoreCase |
-                        RegexOptions.CultureInvariant);
+                var match = Regex.Match(
+                    text,
+                    pattern,
+                    RegexOptions.IgnoreCase |
+                    RegexOptions.CultureInvariant);
 
                 if (!match.Success)
                 {
                     continue;
                 }
 
-                var value =
-                    match.Groups[2].Value.Trim();
-
-                var parsed =
-                    ParseMoney(value);
+                var parsed = ParseMoney(
+                    match.Groups[1].Value);
 
                 if (parsed.HasValue)
                 {
@@ -780,34 +864,40 @@ namespace DocumentManagement.API.Services
 
             var patterns = new[]
             {
-                @"\bgrand\s+total\s*[:\-]?\s*(R|\$|€|£)?\s*([0-9][0-9,\.\s]*)",
+                // Grand Total
+                @"\bgrand\s+total\s*[:\-]?\s*(?:R|ZAR|\$|€|£)?\s*([0-9][0-9,\.\s]*)",
 
-                @"\btotal\s+amount\s*[:\-]?\s*(R|\$|€|£)?\s*([0-9][0-9,\.\s]*)",
+                // Total Amount
+                @"\btotal\s+amount\s*[:\-]?\s*(?:R|ZAR|\$|€|£)?\s*([0-9][0-9,\.\s]*)",
 
-                @"\btotal\s+due\s*[:\-]?\s*(R|\$|€|£)?\s*([0-9][0-9,\.\s]*)",
+                // Total Due
+                @"\btotal\s+due\s*[:\-]?\s*(?:R|ZAR|\$|€|£)?\s*([0-9][0-9,\.\s]*)",
 
-                @"\btotal\s*[:\-]?\s*(R|\$|€|£)?\s*([0-9][0-9,\.\s]*)"
+                // Amount Due
+                @"\bamount\s+due\s*[:\-]?\s*(?:R|ZAR|\$|€|£)?\s*([0-9][0-9,\.\s]*)",
+
+                // Balance Due
+                @"\bbalance\s+due\s*[:\-]?\s*(?:R|ZAR|\$|€|£)?\s*([0-9][0-9,\.\s]*)",
+
+                // Total
+                @"\btotal\s*[:\-]?\s*(?:R|ZAR|\$|€|£)?\s*([0-9][0-9,\.\s]*)"
             };
 
             foreach (var pattern in patterns)
             {
-                var match =
-                    Regex.Match(
-                        text,
-                        pattern,
-                        RegexOptions.IgnoreCase |
-                        RegexOptions.CultureInvariant);
+                var match = Regex.Match(
+                    text,
+                    pattern,
+                    RegexOptions.IgnoreCase |
+                    RegexOptions.CultureInvariant);
 
                 if (!match.Success)
                 {
                     continue;
                 }
 
-                var value =
-                    match.Groups[2].Value.Trim();
-
-                var parsed =
-                    ParseMoney(value);
+                var parsed = ParseMoney(
+                    match.Groups[1].Value);
 
                 if (parsed.HasValue)
                 {
@@ -832,14 +922,13 @@ namespace DocumentManagement.API.Services
             }
 
             var pattern =
-                $@"\b(?:{labelPattern})\s*[:\-]?\s*(?:R|\$|€|£)?\s*([0-9][0-9,\.\s]*)";
+                $@"\b(?:{labelPattern})\s*[:\-]?\s*(?:R|ZAR|\$|€|£)?\s*([0-9][0-9,\.\s]*)";
 
-            var match =
-                Regex.Match(
-                    text,
-                    pattern,
-                    RegexOptions.IgnoreCase |
-                    RegexOptions.CultureInvariant);
+            var match = Regex.Match(
+                text,
+                pattern,
+                RegexOptions.IgnoreCase |
+                RegexOptions.CultureInvariant);
 
             if (!match.Success)
             {
@@ -861,32 +950,24 @@ namespace DocumentManagement.API.Services
                 return null;
             }
 
-            var cleaned =
-                value.Trim();
+            var cleaned = value.Trim();
 
-            cleaned =
-                Regex.Replace(
-                    cleaned,
-                    @"[^\d,\.\-]",
-                    "");
+            // Remove currency symbols and unwanted characters.
+            cleaned = Regex.Replace(
+                cleaned,
+                @"[^\d,\.\-]",
+                "");
 
             if (string.IsNullOrWhiteSpace(cleaned))
             {
                 return null;
             }
 
-            // Handle common South African / international formats.
-            //
-            // Examples:
-            // 1,234.56 -> 1234.56
-            // 1 234.56 -> 1234.56
-            // 1234.56  -> 1234.56
-            // 1.234,56 -> 1234.56
+            cleaned = cleaned.Replace(" ", "");
 
-            cleaned =
-                cleaned.Replace(
-                    " ",
-                    "");
+            // --------------------------------------------------------
+            // BOTH COMMA AND DOT
+            // --------------------------------------------------------
 
             if (cleaned.Contains(',') &&
                 cleaned.Contains('.'))
@@ -899,51 +980,66 @@ namespace DocumentManagement.API.Services
 
                 if (lastComma > lastDot)
                 {
-                    // European format:
                     // 1.234,56
-                    cleaned =
-                        cleaned.Replace(
-                            ".",
-                            "");
+                    cleaned = cleaned.Replace(
+                        ".",
+                        "");
 
-                    cleaned =
-                        cleaned.Replace(
-                            ",",
-                            ".");
+                    cleaned = cleaned.Replace(
+                        ",",
+                        ".");
                 }
                 else
                 {
-                    // Standard format:
                     // 1,234.56
-                    cleaned =
-                        cleaned.Replace(
-                            ",",
-                            "");
+                    cleaned = cleaned.Replace(
+                        ",",
+                        "");
                 }
             }
+
+            // --------------------------------------------------------
+            // ONLY COMMA
+            // --------------------------------------------------------
+
             else if (cleaned.Contains(','))
             {
-                var commaParts =
+                var parts =
                     cleaned.Split(',');
 
-                if (commaParts.Length == 2 &&
-                    commaParts[1].Length == 2)
+                if (parts.Length == 2 &&
+                    parts[1].Length == 2)
                 {
-                    // Example:
                     // 1234,56
-                    cleaned =
-                        cleaned.Replace(
-                            ",",
-                            ".");
+                    cleaned = cleaned.Replace(
+                        ",",
+                        ".");
                 }
                 else
                 {
-                    // Example:
                     // 1,234
-                    cleaned =
-                        cleaned.Replace(
-                            ",",
-                            "");
+                    cleaned = cleaned.Replace(
+                        ",",
+                        "");
+                }
+            }
+
+            // --------------------------------------------------------
+            // ONLY DOT
+            // --------------------------------------------------------
+
+            else if (cleaned.Contains('.'))
+            {
+                var parts =
+                    cleaned.Split('.');
+
+                // Multiple dots normally indicate thousands
+                // separators, e.g. 1.234.567
+                if (parts.Length > 2)
+                {
+                    cleaned = cleaned.Replace(
+                        ".",
+                        "");
                 }
             }
 
@@ -958,6 +1054,75 @@ namespace DocumentManagement.API.Services
             }
 
             return null;
+        }
+
+        // ============================================================
+        // CLEAN EXTRACTED VALUE
+        // ============================================================
+
+        private string CleanExtractedValue(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return string.Empty;
+            }
+
+            var cleaned = value.Trim();
+
+            cleaned = Regex.Replace(
+                cleaned,
+                @"\s{2,}",
+                " ");
+
+            cleaned = cleaned.Trim(
+                ':',
+                '-',
+                '|',
+                ' ',
+                '.',
+                ',');
+
+            return cleaned;
+        }
+
+        // ============================================================
+        // INVOICE HEADING CHECK
+        // ============================================================
+
+        private bool LooksLikeInvoiceHeading(string value)
+        {
+            return Regex.IsMatch(
+                value,
+                @"^(?:invoice|tax invoice|credit note|invoice number|invoice date|bill to|ship to|customer|vendor|supplier)$",
+                RegexOptions.IgnoreCase |
+                RegexOptions.CultureInvariant);
+        }
+
+        // ============================================================
+        // FINANCIAL INFORMATION CHECK
+        // ============================================================
+
+        private bool ContainsFinancialInformation(string value)
+        {
+            if (Regex.IsMatch(
+                value,
+                @"(?:R|ZAR|\$|€|£)\s*\d",
+                RegexOptions.IgnoreCase |
+                RegexOptions.CultureInvariant))
+            {
+                return true;
+            }
+
+            if (Regex.IsMatch(
+                value,
+                @"\b(?:VAT|subtotal|total|amount|balance|invoice number|invoice date)\b",
+                RegexOptions.IgnoreCase |
+                RegexOptions.CultureInvariant))
+            {
+                return true;
+            }
+
+            return false;
         }
     }
 
