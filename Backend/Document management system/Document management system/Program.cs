@@ -1,4 +1,3 @@
-
 using DocumentManagement.API.Data;
 using DocumentManagement.API.Models;
 using DocumentManagement.API.Services;
@@ -29,6 +28,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(connectionString));
 
 
+
 // ============================================================
 // ASP.NET CORE IDENTITY
 // ============================================================
@@ -48,6 +48,7 @@ builder.Services
     })
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
+
 
 
 // ============================================================
@@ -75,6 +76,7 @@ if (string.IsNullOrWhiteSpace(jwtAudience))
     throw new InvalidOperationException(
         "JWT audience is missing from configuration.");
 }
+
 
 
 // ============================================================
@@ -115,11 +117,13 @@ builder.Services
     });
 
 
+
 // ============================================================
 // AUTHORIZATION
 // ============================================================
 
 builder.Services.AddAuthorization();
+
 
 
 // ============================================================
@@ -140,6 +144,7 @@ builder.Services.AddCors(options =>
 });
 
 
+
 // ============================================================
 // APPLICATION SERVICES
 // ============================================================
@@ -148,12 +153,20 @@ builder.Services.AddScoped<PdfTextExtractionService>();
 builder.Services.AddScoped<InvoiceExtractionService>();
 builder.Services.AddScoped<DocumentContentExtractionService>();
 
+// ============================================================
+// GEMINI AI INVOICE EXTRACTION
+// ============================================================
+
+builder.Services.AddScoped<GeminiInvoiceExtractionService>();
+
+
 
 // ============================================================
 // CONTROLLERS
 // ============================================================
 
 builder.Services.AddControllers();
+
 
 
 // ============================================================
@@ -198,11 +211,13 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 
+
 // ============================================================
 // BUILD APPLICATION
 // ============================================================
 
 var app = builder.Build();
+
 
 
 // ============================================================
@@ -227,6 +242,7 @@ using (var scope = app.Services.CreateScope())
     // --------------------------------------------------------
 
     await dbContext.Database.EnsureCreatedAsync();
+
 
 
     // --------------------------------------------------------
@@ -381,6 +397,7 @@ using (var scope = app.Services.CreateScope())
         await userManager.FindByEmailAsync(adminEmail);
 
 
+
     // --------------------------------------------------------
     // Create admin if it doesn't exist
     // --------------------------------------------------------
@@ -453,6 +470,7 @@ using (var scope = app.Services.CreateScope())
     }
 
 
+
     // --------------------------------------------------------
     // Make sure email is confirmed
     // --------------------------------------------------------
@@ -474,6 +492,7 @@ using (var scope = app.Services.CreateScope())
                 $"Could not update administrator: {errors}");
         }
     }
+
 
 
     // --------------------------------------------------------
@@ -520,6 +539,7 @@ using (var scope = app.Services.CreateScope())
 }
 
 
+
 // ============================================================
 // HTTP REQUEST PIPELINE
 // ============================================================
@@ -539,11 +559,13 @@ if (app.Environment.IsDevelopment())
 }
 
 
+
 // ============================================================
 // QUESTPDF
 // ============================================================
 
 QuestPDF.Settings.License = LicenseType.Community;
+
 
 
 // ============================================================
@@ -559,4 +581,3 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
-
