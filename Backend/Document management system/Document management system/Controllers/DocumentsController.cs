@@ -1,4 +1,3 @@
-
 using DocumentManagement.API.Data;
 using DocumentManagement.API.Models;
 using DocumentManagement.API.Services;
@@ -18,18 +17,18 @@ namespace DocumentManagement.API.Controllers
         private readonly ApplicationDbContext _context;
         private readonly IWebHostEnvironment _environment;
         private readonly DocumentContentExtractionService _documentContentExtractionService;
-        private readonly InvoiceExtractionService _invoiceExtractionService;
+        private readonly GeminiInvoiceExtractionService _geminiInvoiceExtractionService;
 
         public DocumentsController(
             ApplicationDbContext context,
             IWebHostEnvironment environment,
             DocumentContentExtractionService documentContentExtractionService,
-            InvoiceExtractionService invoiceExtractionService)
+            GeminiInvoiceExtractionService geminiInvoiceExtractionService)
         {
             _context = context;
             _environment = environment;
             _documentContentExtractionService = documentContentExtractionService;
-            _invoiceExtractionService = invoiceExtractionService;
+            _geminiInvoiceExtractionService = geminiInvoiceExtractionService;
         }
 
         // ============================================================
@@ -181,13 +180,34 @@ namespace DocumentManagement.API.Controllers
                 }
 
                 // ====================================================
-                // IDENTIFY INVOICE / CREDIT NOTE
+                // GEMINI AI INVOICE EXTRACTION
                 // ====================================================
 
-                var extractedInvoiceData =
-                    _invoiceExtractionService.ExtractInvoiceData(
-                        0,
-                        extractedText);
+                InvoiceData extractedInvoiceData;
+
+                try
+                {
+                    extractedInvoiceData =
+                        await _geminiInvoiceExtractionService
+                            .ExtractInvoiceDataAsync(
+                                0,
+                                extractedText);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(
+                        $"Gemini invoice extraction failed: {ex.Message}");
+
+                    DeleteFileIfExists(filePath);
+
+                    return StatusCode(
+                        StatusCodes.Status502BadGateway,
+                        new
+                        {
+                            message =
+                                "The document text was read successfully, but Gemini AI could not extract the invoice information. Please try again."
+                        });
+                }
 
                 var documentType =
                     extractedInvoiceData.DocumentType?.Trim();
@@ -590,7 +610,5 @@ namespace DocumentManagement.API.Controllers
                 Console.WriteLine(
                     $"Could not delete temporary file: {ex.Message}");
             }
-        }
     }
 }
-
