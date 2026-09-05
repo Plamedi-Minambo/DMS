@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -222,20 +223,6 @@ function Documents() {
 
             let uploadedDocument = null;
 
-            /*
-             * The backend returns:
-             *
-             * {
-             *     message: "...",
-             *     document: {
-             *         id: ...
-             *     }
-             * }
-             *
-             * Therefore we need response.data.document
-             * rather than response.data directly.
-             */
-
             const returnedDocument =
                 response.data?.document;
 
@@ -446,74 +433,6 @@ function Documents() {
     };
 
     // ========================================
-    // VIEW DOCUMENT
-    // ========================================
-
-    const handleViewDocument = async (id) => {
-        try {
-            const response = await api.get(
-                `/Documents/${id}/view`,
-                {
-                    responseType: "blob",
-                }
-            );
-
-            const contentType =
-                response.headers["content-type"] ||
-                "application/pdf";
-
-            const fileBlob = new Blob(
-                [response.data],
-                {
-                    type: contentType,
-                }
-            );
-
-            const url =
-                window.URL.createObjectURL(
-                    fileBlob
-                );
-
-            // Open the document directly in a new browser tab.
-            // This allows the browser's built-in PDF/image viewer
-            // to display the document instead of downloading it.
-            window.open(
-                url,
-                "_blank",
-                "noopener,noreferrer"
-            );
-
-            // Give the new tab time to load the Blob URL
-            // before releasing it.
-            setTimeout(() => {
-                window.URL.revokeObjectURL(url);
-            }, 60000);
-
-        } catch (error) {
-            console.error(
-                "View error:",
-                error
-            );
-
-            if (error.response?.status === 401) {
-                logout();
-                navigate("/login");
-                return;
-            }
-
-            if (error.response?.status === 403) {
-                showAuthorizationPopup(
-                    "You do not have authorization to view this document."
-                );
-                return;
-            }
-
-            alert(
-                "Failed to view the document."
-            );
-        }
-    };
-    // ========================================
     // DOWNLOAD DOCUMENT
     // ========================================
 
@@ -531,7 +450,7 @@ function Documents() {
 
             const contentType =
                 response.headers[
-                "content-type"
+                    "content-type"
                 ] ||
                 "application/octet-stream";
 
@@ -835,7 +754,7 @@ function Documents() {
 
     const getStatusClass = (status) => {
         switch (
-        status?.toLowerCase()
+            status?.toLowerCase()
         ) {
             case "approved":
                 return "status-approved";
@@ -859,7 +778,7 @@ function Documents() {
         status
     ) => {
         switch (
-        status?.toLowerCase()
+            status?.toLowerCase()
         ) {
             case "completed":
                 return "extraction-completed";
@@ -933,8 +852,6 @@ function Documents() {
                         aria-labelledby="upload-details-title"
                     >
 
-                        {/* HEADER */}
-
                         <div className="upload-details-header">
 
                             <div className="upload-details-icon">
@@ -953,11 +870,7 @@ function Documents() {
 
                         </div>
 
-                        {/* CONTENT */}
-
                         <div className="upload-details-content">
-
-                            {/* FILE INFORMATION */}
 
                             <div className="upload-details-file-card">
 
@@ -1000,8 +913,6 @@ function Documents() {
 
                             </div>
 
-                            {/* DOCUMENT DETAILS */}
-
                             <div className="upload-details-grid">
 
                                 <div className="upload-details-field">
@@ -1037,8 +948,6 @@ function Documents() {
 
                             </div>
 
-                            {/* DESCRIPTION */}
-
                             <div className="upload-details-description">
 
                                 <span>
@@ -1054,8 +963,6 @@ function Documents() {
                                 </p>
 
                             </div>
-
-                            {/* READY MESSAGE */}
 
                             <div className="upload-details-review">
 
@@ -1078,8 +985,6 @@ function Documents() {
                             </div>
 
                         </div>
-
-                        {/* FOOTER */}
 
                         <div className="upload-details-footer">
 
@@ -1130,8 +1035,6 @@ function Documents() {
 
                     <div className="extraction-popup">
 
-                        {/* HEADER */}
-
                         <div className="extraction-popup-header">
 
                             <div className="extraction-success-icon">
@@ -1149,8 +1052,6 @@ function Documents() {
                             </div>
 
                         </div>
-
-                        {/* FILE INFORMATION */}
 
                         <div className="extraction-file">
 
@@ -1175,16 +1076,16 @@ function Documents() {
 
                         </div>
 
-                        {/* EXTRACTED INFORMATION */}
-
                         <div className="extraction-content">
 
                             <div className="extraction-section-title">
+
                                 <span>
                                     ✨
                                 </span>
 
                                 Extracted Information
+
                             </div>
 
                             <p className="extraction-review-text">
@@ -1301,8 +1202,6 @@ function Documents() {
 
                             </div>
 
-                            {/* TOTAL */}
-
                             <div className="extraction-total">
 
                                 <div>
@@ -1326,8 +1225,6 @@ function Documents() {
                                 </strong>
 
                             </div>
-
-                            {/* EXTRACTION STATUS */}
 
                             <div className="extraction-complete">
 
@@ -1362,8 +1259,6 @@ function Documents() {
                             </div>
 
                         </div>
-
-                        {/* FOOTER */}
 
                         <div className="extraction-popup-footer">
 
@@ -1527,8 +1422,7 @@ function Documents() {
                         </h1>
 
                         <p>
-                            Manage and view
-                            your documents
+                            Manage your documents
                         </p>
                     </div>
 
@@ -1643,6 +1537,7 @@ function Documents() {
                                     rejectedDocuments
                                 }
                             </strong>
+
                         </div>
 
                     </div>
@@ -1805,8 +1700,7 @@ function Documents() {
                             </h2>
 
                             <p>
-                                View, manage and
-                                review extracted
+                                Manage and review extracted
                                 document information
                             </p>
                         </div>
@@ -2267,18 +2161,6 @@ function Documents() {
 
                                                                 <button
                                                                     type="button"
-                                                                    className="view-button"
-                                                                    onClick={() =>
-                                                                        handleViewDocument(
-                                                                            document.id
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    👁 View
-                                                                </button>
-
-                                                                <button
-                                                                    type="button"
                                                                     className="download-button"
                                                                     onClick={() =>
                                                                         handleDownloadDocument(
@@ -2339,3 +2221,4 @@ function Documents() {
 }
 
 export default Documents;
+
