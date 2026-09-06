@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using Google.GenAI;
 using DocumentManagement.API.Models;
 
+
 namespace DocumentManagement.API.Services
 {
     public class GeminiInvoiceExtractionService
