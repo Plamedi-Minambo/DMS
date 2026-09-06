@@ -252,10 +252,39 @@ namespace DocumentManagement.API.Controllers
                 }
 
                 var userId =
-                    User.FindFirstValue(
-                        ClaimTypes.NameIdentifier);
+    User.FindFirstValue(
+        ClaimTypes.NameIdentifier);
 
-                var document = new Document
+if (string.IsNullOrWhiteSpace(userId))
+{
+    DeleteFileIfExists(filePath);
+
+    return Unauthorized(new
+    {
+        message =
+            "Your login session does not contain a valid user ID. Please log out and log in again."
+    });
+}
+
+var userExists =
+    await _context.Users
+        .AnyAsync(u => u.Id == userId);
+
+if (!userExists)
+{
+    Console.WriteLine(
+        $"Authenticated user ID '{userId}' was not found in the Users table.");
+
+    DeleteFileIfExists(filePath);
+
+    return Unauthorized(new
+    {
+        message =
+            "Your account could not be found in the database. Please log out and log in again."
+    });
+}
+
+var document = new Document
                 {
                     FileName =
                         originalFileName,
