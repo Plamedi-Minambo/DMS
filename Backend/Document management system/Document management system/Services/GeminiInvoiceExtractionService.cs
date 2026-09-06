@@ -16,7 +16,7 @@ namespace DocumentManagement.API.Services
         {
             _apiKey =
                 configuration["Gemini:ApiKey"]
-                ?? Environment.GetEnvironmentVariable("GEMINI_API_KEY")
+                ?? System.Environment.GetEnvironmentVariable("GEMINI_API_KEY")
                 ?? string.Empty;
 
             if (string.IsNullOrWhiteSpace(_apiKey))
@@ -44,7 +44,7 @@ namespace DocumentManagement.API.Services
                     nameof(filePath));
             }
 
-            if (!File.Exists(filePath))
+            if (!System.IO.File.Exists(filePath))
             {
                 throw new FileNotFoundException(
                     "Invoice file could not be found.",
@@ -74,7 +74,7 @@ namespace DocumentManagement.API.Services
             if (extension is ".png" or ".jpg" or ".jpeg" or ".pdf")
             {
                 var fileBytes =
-                    await File.ReadAllBytesAsync(filePath);
+                    await System.IO.File.ReadAllBytesAsync(filePath);
 
                 if (fileBytes.Length == 0)
                 {
