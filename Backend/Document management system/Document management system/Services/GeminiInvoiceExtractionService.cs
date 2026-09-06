@@ -112,7 +112,7 @@ namespace DocumentManagement.API.Services
 
                     response =
                         await client.Models.GenerateContentAsync(
-                            model: "gemini-3.7-flash",
+                            model: "gemini-3.8-flash",
                             contents: prompt);
 
                     break;
