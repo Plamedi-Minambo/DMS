@@ -10,7 +10,8 @@ namespace DocumentManagement.API.Services
     {
         private readonly string _apiKey;
 
-        public GeminiInvoiceExtractionService(IConfiguration configuration)
+        public GeminiInvoiceExtractionService(
+            IConfiguration configuration)
         {
             _apiKey =
                 configuration["Gemini:ApiKey"]
@@ -21,7 +22,7 @@ namespace DocumentManagement.API.Services
             {
                 throw new InvalidOperationException(
                     "Gemini API key is not configured. " +
-                    "Set Gemini:ApiKey or GEMINI_API_KEY.");
+                    "Set GEMINI_API_KEY in the environment variables.");
             }
         }
 
@@ -42,66 +43,65 @@ namespace DocumentManagement.API.Services
             var client = new Client(
                 apiKey: _apiKey);
 
-            var prompt = $"""
-                You are an invoice data extraction AI.
+            var prompt =
+                "You are an invoice data extraction AI.\n\n" +
 
-                Extract structured information from the invoice text below.
+                "Extract structured information from the invoice text below.\n\n" +
 
-                IMPORTANT RULES:
+                "IMPORTANT RULES:\n" +
 
-                1. Extract the invoice number exactly.
-                   Example: INV-20394 must remain INV-20394.
+                "1. Extract the invoice number exactly.\n" +
+                "   Example: INV-20394 must remain INV-20394.\n\n" +
 
-                2. The vendor/customer is the company name immediately
-                   following "BILL TO".
+                "2. The vendor means the customer/company listed immediately " +
+                "after BILL TO.\n\n" +
 
-                3. Do NOT treat a VAT registration number as VAT.
-                   For example:
-                   "VAT No: 4650198237"
-                   is a registration number, NOT the VAT amount.
+                "3. Do NOT treat a VAT registration number as the VAT amount.\n" +
+                "   Example: VAT No: 4650198237 is a registration number, " +
+                "not VAT.\n\n" +
 
-                4. VAT must be the actual tax amount.
-                   In this invoice:
-                   "Tax (VAT 15%) 4,477.50"
-                   means VAT = 4477.50.
+                "4. VAT means the actual tax amount on the invoice.\n\n" +
 
-                5. Amount means the amount before VAT after discounts.
+                "5. Amount means subtotal minus discount, before VAT.\n\n" +
 
-                6. If the invoice contains:
-                   Subtotal = 30850.00
-                   Discount = 1000.00
-                   then Amount = 29850.00.
+                "6. If Subtotal is 30850.00 and Discount is 1000.00, " +
+                "Amount must be 29850.00.\n\n" +
 
-                7. Total Amount means the final amount due.
+                "7. TotalAmount means the final total amount due.\n\n" +
 
-                8. Never interpret an invoice number as a monetary value.
+                "8. Never interpret an invoice number as a monetary amount.\n\n" +
 
-                9. Return numbers without currency symbols or commas.
+                "9. Return monetary numbers without currency symbols or commas.\n\n" +
 
-                10. Return the invoice date as yyyy-MM-dd.
+                "10. Return the invoice date in yyyy-MM-dd format.\n\n" +
 
-                11. If a field cannot be determined, return null.
+                "11. If a value cannot be determined, return null.\n\n" +
 
-                Return ONLY valid JSON matching this structure:
+                "Return ONLY valid JSON using exactly these property names:\n\n" +
 
-                {{
-                    "documentType": "Invoice",
-                    "invoiceNumber": "INV-20394",
-                    "vendor": "Northgate Retail Group (Pty) Ltd",
-                    "invoiceDate": "2026-09-05",
-                    "amount": 29850.00,
-                    "vat": 4477.50,
-                    "totalAmount": 34327.50
-                }}
+                "documentType\n" +
+                "invoiceNumber\n" +
+                "vendor\n" +
+                "invoiceDate\n" +
+                "amount\n" +
+                "vat\n" +
+                "totalAmount\n\n" +
 
-                Invoice text:
+                "Example format:\n" +
+                "{\"documentType\":\"Invoice\"," +
+                "\"invoiceNumber\":\"INV-20394\"," +
+                "\"vendor\":\"Northgate Retail Group (Pty) Ltd\"," +
+                "\"invoiceDate\":\"2026-09-05\"," +
+                "\"amount\":29850.00," +
+                "\"vat\":4477.50," +
+                "\"totalAmount\":34327.50}\n\n" +
 
-                {extractedText}
-                """;
+                "Invoice text:\n\n" +
+                extractedText;
 
             var response =
                 await client.Models.GenerateContentAsync(
-                    model: "gemini-3.8-flash",
+                    model: "gemini-2.0-flash",
                     contents: prompt);
 
             var responseText =
@@ -152,7 +152,7 @@ namespace DocumentManagement.API.Services
                 DocumentType =
                     string.IsNullOrWhiteSpace(result.DocumentType)
                         ? "Invoice"
-                        : result.DocumentType,
+                        : result.DocumentType.Trim(),
 
                 InvoiceNumber =
                     CleanString(result.InvoiceNumber),
@@ -222,10 +222,6 @@ namespace DocumentManagement.API.Services
 
             return value.Trim();
         }
-
-        // ============================================================
-        // GEMINI RESPONSE MODEL
-        // ============================================================
 
         private class GeminiInvoiceResult
         {
