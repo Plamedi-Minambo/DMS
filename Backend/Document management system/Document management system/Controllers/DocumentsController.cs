@@ -180,8 +180,7 @@ namespace DocumentManagement.API.Controllers
                 catch (Exception ex)
                 {
                     Console.WriteLine(
-                        $"Gemini invoice extraction failed: {ex.Message}");
-
+                     $"Gemini invoice extraction failed: {ex}");
                     DeleteFileIfExists(filePath);
 
                     return StatusCode(
