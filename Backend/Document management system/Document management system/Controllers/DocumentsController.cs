@@ -155,39 +155,50 @@ namespace DocumentManagement.API.Controllers
                     });
                 }
 
-              var isImageOrPdf =
-    extension == ".png" ||
-    extension == ".jpg" ||
-    extension == ".jpeg" ||
-    extension == ".pdf";
+                // ============================================================
+                // OCR/TEXT IS REQUIRED ONLY FOR DOCX
+                // PNG/JPG/JPEG/PDF ARE SENT DIRECTLY TO GEMINI
+                // ============================================================
 
-if (!isImageOrPdf &&
-    string.IsNullOrWhiteSpace(extractedText))
-{
-    DeleteFileIfExists(filePath);
+                var isImageOrPdf =
+                    extension == ".png" ||
+                    extension == ".jpg" ||
+                    extension == ".jpeg" ||
+                    extension == ".pdf";
 
-    return BadRequest(new
-    {
-        message =
-            "No readable text was found in the document. Please upload a readable Invoice or Credit Note."
-    });
-}
+                if (!isImageOrPdf &&
+                    string.IsNullOrWhiteSpace(extractedText))
+                {
+                    DeleteFileIfExists(filePath);
+
+                    return BadRequest(new
+                    {
+                        message =
+                            "No readable text was found in the document. Please upload a readable Invoice or Credit Note."
+                    });
+                }
+
+                // ============================================================
+                // GEMINI AI EXTRACTION
+                // ============================================================
+
                 InvoiceData extractedInvoiceData;
 
                 try
                 {
-                   extractedInvoiceData =
-    await _geminiInvoiceExtractionService
-        .ExtractInvoiceDataAsync(
-            0,
-            filePath,
-            extension,
-            extractedText);
-            }
+                    extractedInvoiceData =
+                        await _geminiInvoiceExtractionService
+                            .ExtractInvoiceDataAsync(
+                                0,
+                                filePath,
+                                extension,
+                                extractedText);
+                }
                 catch (Exception ex)
                 {
                     Console.WriteLine(
-                     $"Gemini invoice extraction failed: {ex}");
+                        $"Gemini invoice extraction failed: {ex}");
+
                     DeleteFileIfExists(filePath);
 
                     return StatusCode(
@@ -198,6 +209,10 @@ if (!isImageOrPdf &&
                                 "The document text was read successfully, but Gemini AI could not extract the invoice information. Please try again."
                         });
                 }
+
+                // ============================================================
+                // DOCUMENT TYPE VALIDATION
+                // ============================================================
 
                 var documentType =
                     extractedInvoiceData
@@ -216,113 +231,122 @@ if (!isImageOrPdf &&
                         "Credit Note",
                         StringComparison.OrdinalIgnoreCase);
 
-            if (!isInvoice && !isCreditNote)
-{
-    DeleteFileIfExists(filePath);
+                if (!isInvoice && !isCreditNote)
+                {
+                    DeleteFileIfExists(filePath);
 
-    return UnprocessableEntity(new
-    {
-        message =
-            "This document was rejected because its content could not be identified as an Invoice or Credit Note."
-    });
-}
+                    return UnprocessableEntity(new
+                    {
+                        message =
+                            "This document was rejected because its content could not be identified as an Invoice or Credit Note."
+                    });
+                }
 
-// ============================================================
-// STRICT INVOICE / CREDIT NOTE VALIDATION
-// ============================================================
+                // ============================================================
+                // STRICT INVOICE / CREDIT NOTE VALIDATION
+                // ============================================================
 
-// Invoice / Credit Note number is mandatory
-if (string.IsNullOrWhiteSpace(
-    extractedInvoiceData.InvoiceNumber))
-{
-    DeleteFileIfExists(filePath);
+                // Invoice / Credit Note number is mandatory
+                if (string.IsNullOrWhiteSpace(
+                    extractedInvoiceData.InvoiceNumber))
+                {
+                    DeleteFileIfExists(filePath);
 
-    return UnprocessableEntity(new
-    {
-        message =
-            $"This {documentType} was rejected because no valid invoice or credit note number could be identified."
-    });
-}
+                    return UnprocessableEntity(new
+                    {
+                        message =
+                            $"This {documentType} was rejected because no valid invoice or credit note number could be identified."
+                    });
+                }
 
-// Vendor / supplier is mandatory
-if (string.IsNullOrWhiteSpace(
-    extractedInvoiceData.Vendor))
-{
-    DeleteFileIfExists(filePath);
+                // Vendor / supplier is mandatory
+                if (string.IsNullOrWhiteSpace(
+                    extractedInvoiceData.Vendor))
+                {
+                    DeleteFileIfExists(filePath);
 
-    return UnprocessableEntity(new
-    {
-        message =
-            $"This {documentType} was rejected because no valid vendor or supplier could be identified."
-    });
-}
+                    return UnprocessableEntity(new
+                    {
+                        message =
+                            $"This {documentType} was rejected because no valid vendor or supplier could be identified."
+                    });
+                }
 
-// Invoice date is mandatory
-if (!extractedInvoiceData.InvoiceDate.HasValue)
-{
-    DeleteFileIfExists(filePath);
+                // Invoice date is mandatory
+                if (!extractedInvoiceData.InvoiceDate.HasValue)
+                {
+                    DeleteFileIfExists(filePath);
 
-    return UnprocessableEntity(new
-    {
-        message =
-            $"This {documentType} was rejected because no valid invoice date could be identified."
-    });
-}
+                    return UnprocessableEntity(new
+                    {
+                        message =
+                            $"This {documentType} was rejected because no valid invoice date could be identified."
+                    });
+                }
 
-// Amount before VAT is mandatory
-if (!extractedInvoiceData.Amount.HasValue)
-{
-    DeleteFileIfExists(filePath);
+                // Amount before VAT is mandatory
+                if (!extractedInvoiceData.Amount.HasValue)
+                {
+                    DeleteFileIfExists(filePath);
 
-    return UnprocessableEntity(new
-    {
-        message =
-            $"This {documentType} was rejected because no valid amount could be identified."
-    });
-}
+                    return UnprocessableEntity(new
+                    {
+                        message =
+                            $"This {documentType} was rejected because no valid amount could be identified."
+                    });
+                }
 
-// Final total is mandatory
-if (!extractedInvoiceData.TotalAmount.HasValue)
-{
-    DeleteFileIfExists(filePath);
+                // Final total is mandatory
+                if (!extractedInvoiceData.TotalAmount.HasValue)
+                {
+                    DeleteFileIfExists(filePath);
 
-    return UnprocessableEntity(new
-    {
-        message =
-            $"This {documentType} was rejected because no valid total amount could be identified."
-    });
-}
+                    return UnprocessableEntity(new
+                    {
+                        message =
+                            $"This {documentType} was rejected because no valid total amount could be identified."
+                    });
+                }
 
-// Monetary values cannot be negative
-if (extractedInvoiceData.Amount.Value < 0 ||
-    extractedInvoiceData.TotalAmount.Value < 0 ||
-    (extractedInvoiceData.VAT.HasValue &&
-     extractedInvoiceData.VAT.Value < 0))
-{
-    DeleteFileIfExists(filePath);
+                // Monetary values cannot be negative
+                if (extractedInvoiceData.Amount.Value < 0 ||
+                    extractedInvoiceData.TotalAmount.Value < 0 ||
+                    (extractedInvoiceData.VAT.HasValue &&
+                     extractedInvoiceData.VAT.Value < 0))
+                {
+                    DeleteFileIfExists(filePath);
 
-    return UnprocessableEntity(new
-    {
-        message =
-            $"This {documentType} was rejected because one or more extracted monetary values are invalid."
-    });
-}
+                    return UnprocessableEntity(new
+                    {
+                        message =
+                            $"This {documentType} was rejected because one or more extracted monetary values are invalid."
+                    });
+                }
 
-// Total amount should not normally be less than the amount before VAT.
-// A small tolerance is allowed for rounding.
-if (extractedInvoiceData.TotalAmount.Value + 0.01m <
-    extractedInvoiceData.Amount.Value)
-{
-    DeleteFileIfExists(filePath);
+                // Total amount should not normally be less than
+                // the amount before VAT.
+                // A small tolerance is allowed for rounding.
+                if (extractedInvoiceData.TotalAmount.Value + 0.01m <
+                    extractedInvoiceData.Amount.Value)
+                {
+                    DeleteFileIfExists(filePath);
 
-    return UnprocessableEntity(new
-    {
-        message =
-            $"This {documentType} was rejected because the extracted total amount is inconsistent with the amount before VAT."
-    });
-}
+                    return UnprocessableEntity(new
+                    {
+                        message =
+                            $"This {documentType} was rejected because the extracted total amount is inconsistent with the amount before VAT."
+                    });
+                }
 
-var normalizedInvoiceNumber =
+                // ============================================================
+                // DUPLICATE INVOICE NUMBER CHECK
+                // ============================================================
+
+                var normalizedInvoiceNumber =
+                    extractedInvoiceData
+                        .InvoiceNumber?
+                        .Trim()
+                        .ToLowerInvariant();
 
                 if (!string.IsNullOrWhiteSpace(
                     normalizedInvoiceNumber))
@@ -349,40 +373,48 @@ var normalizedInvoiceNumber =
                     }
                 }
 
+                // ============================================================
+                // AUTHENTICATED USER VALIDATION
+                // ============================================================
+
                 var userId =
-    User.FindFirstValue(
-        ClaimTypes.NameIdentifier);
+                    User.FindFirstValue(
+                        ClaimTypes.NameIdentifier);
 
-if (string.IsNullOrWhiteSpace(userId))
-{
-    DeleteFileIfExists(filePath);
+                if (string.IsNullOrWhiteSpace(userId))
+                {
+                    DeleteFileIfExists(filePath);
 
-    return Unauthorized(new
-    {
-        message =
-            "Your login session does not contain a valid user ID. Please log out and log in again."
-    });
-}
+                    return Unauthorized(new
+                    {
+                        message =
+                            "Your login session does not contain a valid user ID. Please log out and log in again."
+                    });
+                }
 
-var userExists =
-    await _context.Users
-        .AnyAsync(u => u.Id == userId);
+                var userExists =
+                    await _context.Users
+                        .AnyAsync(u => u.Id == userId);
 
-if (!userExists)
-{
-    Console.WriteLine(
-        $"Authenticated user ID '{userId}' was not found in the Users table.");
+                if (!userExists)
+                {
+                    Console.WriteLine(
+                        $"Authenticated user ID '{userId}' was not found in the Users table.");
 
-    DeleteFileIfExists(filePath);
+                    DeleteFileIfExists(filePath);
 
-    return Unauthorized(new
-    {
-        message =
-            "Your account could not be found in the database. Please log out and log in again."
-    });
-}
+                    return Unauthorized(new
+                    {
+                        message =
+                            "Your account could not be found in the database. Please log out and log in again."
+                    });
+                }
 
-var document = new Document
+                // ============================================================
+                // CREATE DOCUMENT
+                // ============================================================
+
+                var document = new Document
                 {
                     FileName =
                         originalFileName,
@@ -414,6 +446,10 @@ var document = new Document
                     UploadedById =
                         userId
                 };
+
+                // ============================================================
+                // CREATE INVOICE DATA
+                // ============================================================
 
                 var invoiceData = new InvoiceData
                 {
@@ -448,6 +484,10 @@ var document = new Document
                         extractedInvoiceData.ExtractionStatus
                 };
 
+                // ============================================================
+                // APPROVAL WORKFLOW
+                // ============================================================
+
                 var approvals = new[]
                 {
                     new Approval
@@ -475,6 +515,10 @@ var document = new Document
                     }
                 };
 
+                // ============================================================
+                // SAVE TO DATABASE
+                // ============================================================
+
                 _context.Documents.Add(
                     document);
 
@@ -485,6 +529,10 @@ var document = new Document
                     approvals);
 
                 await _context.SaveChangesAsync();
+
+                // ============================================================
+                // SUCCESS RESPONSE
+                // ============================================================
 
                 return Ok(new
                 {
@@ -534,6 +582,10 @@ var document = new Document
             }
         }
 
+        // ================================================================
+        // GET ALL DOCUMENTS
+        // ================================================================
+
         [Authorize(
             Roles = "Admin,Reviewer,Manager,Finance,Viewer")]
         [HttpGet]
@@ -581,6 +633,10 @@ var document = new Document
 
             return Ok(documents);
         }
+
+        // ================================================================
+        // DOWNLOAD DOCUMENT
+        // ================================================================
 
         [Authorize(
             Roles = "Admin,Reviewer,Manager,Finance")]
@@ -633,6 +689,10 @@ var document = new Document
                 document.FileName);
         }
 
+        // ================================================================
+        // DELETE DOCUMENT
+        // ================================================================
+
         [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteDocument(
@@ -683,6 +743,10 @@ var document = new Document
                     "Document deleted successfully."
             });
         }
+
+        // ================================================================
+        // FILE CLEANUP HELPER
+        // ================================================================
 
         private static void DeleteFileIfExists(
             string filePath)
