@@ -163,8 +163,8 @@ namespace DocumentManagement.API.Services
             var models =
                 new[]
                 {
-                    "gemini-3.8-flash",
-                    "gemini-3.7-flash"
+                    "gemini-3.7-flash",
+                    "gemini-3.6-flash"
                 };
 
             Google.GenAI.Types.GenerateContentResponse? response = null;
