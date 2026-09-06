@@ -216,22 +216,113 @@ if (!isImageOrPdf &&
                         "Credit Note",
                         StringComparison.OrdinalIgnoreCase);
 
-                if (!isInvoice && !isCreditNote)
-                {
-                    DeleteFileIfExists(filePath);
+            if (!isInvoice && !isCreditNote)
+{
+    DeleteFileIfExists(filePath);
 
-                    return UnprocessableEntity(new
-                    {
-                        message =
-                            "This document was rejected because its content could not be identified as an Invoice or Credit Note."
-                    });
-                }
+    return UnprocessableEntity(new
+    {
+        message =
+            "This document was rejected because its content could not be identified as an Invoice or Credit Note."
+    });
+}
 
-                var normalizedInvoiceNumber =
-                    extractedInvoiceData
-                        .InvoiceNumber?
-                        .Trim()
-                        .ToLowerInvariant();
+// ============================================================
+// STRICT INVOICE / CREDIT NOTE VALIDATION
+// ============================================================
+
+// Invoice / Credit Note number is mandatory
+if (string.IsNullOrWhiteSpace(
+    extractedInvoiceData.InvoiceNumber))
+{
+    DeleteFileIfExists(filePath);
+
+    return UnprocessableEntity(new
+    {
+        message =
+            $"This {documentType} was rejected because no valid invoice or credit note number could be identified."
+    });
+}
+
+// Vendor / supplier is mandatory
+if (string.IsNullOrWhiteSpace(
+    extractedInvoiceData.Vendor))
+{
+    DeleteFileIfExists(filePath);
+
+    return UnprocessableEntity(new
+    {
+        message =
+            $"This {documentType} was rejected because no valid vendor or supplier could be identified."
+    });
+}
+
+// Invoice date is mandatory
+if (!extractedInvoiceData.InvoiceDate.HasValue)
+{
+    DeleteFileIfExists(filePath);
+
+    return UnprocessableEntity(new
+    {
+        message =
+            $"This {documentType} was rejected because no valid invoice date could be identified."
+    });
+}
+
+// Amount before VAT is mandatory
+if (!extractedInvoiceData.Amount.HasValue)
+{
+    DeleteFileIfExists(filePath);
+
+    return UnprocessableEntity(new
+    {
+        message =
+            $"This {documentType} was rejected because no valid amount could be identified."
+    });
+}
+
+// Final total is mandatory
+if (!extractedInvoiceData.TotalAmount.HasValue)
+{
+    DeleteFileIfExists(filePath);
+
+    return UnprocessableEntity(new
+    {
+        message =
+            $"This {documentType} was rejected because no valid total amount could be identified."
+    });
+}
+
+// Monetary values cannot be negative
+if (extractedInvoiceData.Amount.Value < 0 ||
+    extractedInvoiceData.TotalAmount.Value < 0 ||
+    (extractedInvoiceData.VAT.HasValue &&
+     extractedInvoiceData.VAT.Value < 0))
+{
+    DeleteFileIfExists(filePath);
+
+    return UnprocessableEntity(new
+    {
+        message =
+            $"This {documentType} was rejected because one or more extracted monetary values are invalid."
+    });
+}
+
+// Total amount should not normally be less than the amount before VAT.
+// A small tolerance is allowed for rounding.
+if (extractedInvoiceData.TotalAmount.Value + 0.01m <
+    extractedInvoiceData.Amount.Value)
+{
+    DeleteFileIfExists(filePath);
+
+    return UnprocessableEntity(new
+    {
+        message =
+            $"This {documentType} was rejected because the extracted total amount is inconsistent with the amount before VAT."
+    });
+}
+
+var normalizedInvoiceNumber =
 
                 if (!string.IsNullOrWhiteSpace(
                     normalizedInvoiceNumber))
