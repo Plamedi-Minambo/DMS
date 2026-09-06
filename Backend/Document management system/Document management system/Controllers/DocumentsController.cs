@@ -178,6 +178,7 @@ namespace DocumentManagement.API.Controllers
             filePath,
             extension,
             extractedText);
+            }
                 catch (Exception ex)
                 {
                     Console.WriteLine(
