@@ -112,9 +112,7 @@ namespace DocumentManagement.API.Services
             // ========================================================
             // DOCX
             //
-            // Gemini cannot receive DOCX as invoice vision input using
-            // this path, so use the text you already extracted with
-            // DocumentContentExtractionService.
+            // Gemini receives the extracted DOCX text.
             // ========================================================
 
             else if (extension == ".docx")
@@ -149,62 +147,108 @@ namespace DocumentManagement.API.Services
                     $"The file type '{extension}' is not supported for AI invoice extraction.");
             }
 
+            // ========================================================
+            // GEMINI MODELS
+            //
+            // Primary model:
+            // gemini-3.8-flash
+            //
+            // Fallback model:
+            // gemini-3.7-flash
+            //
+            // If the primary model is temporarily unavailable,
+            // the service automatically falls back to the second model.
+            // ========================================================
+
+            var models =
+                new[]
+                {
+                    "gemini-3.8-flash",
+                    "gemini-3.7-flash"
+                };
+
             Google.GenAI.Types.GenerateContentResponse? response = null;
 
-            const int maxAttempts = 4;
+            const int maxAttemptsPerModel = 3;
 
             // ========================================================
-            // GEMINI REQUEST + RETRY
+            // GEMINI REQUEST + RETRY + FALLBACK
             // ========================================================
 
-            for (var attempt = 1;
-                 attempt <= maxAttempts;
-                 attempt++)
+            foreach (var model in models)
             {
-                try
+                for (var attempt = 1;
+                     attempt <= maxAttemptsPerModel;
+                     attempt++)
                 {
-                    Console.WriteLine(
-                        $"Gemini invoice extraction attempt {attempt} of {maxAttempts}.");
+                    try
+                    {
+                        Console.WriteLine(
+                            $"Gemini invoice extraction using model '{model}', " +
+                            $"attempt {attempt} of {maxAttemptsPerModel}.");
 
-                    response =
-                        await client.Models.GenerateContentAsync(
-                            model: "gemini-3.5-flash",
-                            contents: contents,
-                            config: new GenerateContentConfig
-                            {
-                                ResponseMimeType =
-                                    "application/json"
-                            });
+                        response =
+                            await client.Models.GenerateContentAsync(
+                                model: model,
+                                contents: contents,
+                                config: new GenerateContentConfig
+                                {
+                                    ResponseMimeType =
+                                        "application/json"
+                                });
 
+                        Console.WriteLine(
+                            $"Gemini invoice extraction succeeded using model '{model}'.");
+
+                        break;
+                    }
+                    catch (Google.GenAI.ServerError ex)
+                    {
+                        Console.WriteLine(
+                            $"Gemini server error using model '{model}' " +
+                            $"on attempt {attempt}: {ex.Message}");
+
+                        if (attempt == maxAttemptsPerModel)
+                        {
+                            Console.WriteLine(
+                                $"Gemini model '{model}' failed all " +
+                                $"{maxAttemptsPerModel} attempts.");
+
+                            break;
+                        }
+
+                        var delaySeconds =
+                            Math.Pow(2, attempt);
+
+                        Console.WriteLine(
+                            $"Gemini model '{model}' appears temporarily unavailable. " +
+                            $"Retrying in {delaySeconds} seconds...");
+
+                        await Task.Delay(
+                            TimeSpan.FromSeconds(delaySeconds));
+                    }
+                }
+
+                if (response != null)
+                {
                     break;
                 }
-                catch (Google.GenAI.ServerError ex)
-                {
-                    Console.WriteLine(
-                        $"Gemini server error on attempt {attempt}: {ex.Message}");
 
-                    if (attempt == maxAttempts)
-                    {
-                        throw;
-                    }
-
-                    var delaySeconds =
-                        Math.Pow(2, attempt);
-
-                    Console.WriteLine(
-                        $"Gemini appears temporarily unavailable. " +
-                        $"Retrying in {delaySeconds} seconds...");
-
-                    await Task.Delay(
-                        TimeSpan.FromSeconds(delaySeconds));
-                }
+                Console.WriteLine(
+                    $"Switching to Gemini fallback model after " +
+                    $"'{model}' was unavailable.");
             }
 
             if (response == null)
             {
                 throw new InvalidOperationException(
-                    "Gemini did not return a response.");
+                    "Gemini invoice extraction failed. " +
+                    "Both Gemini models were temporarily unavailable.");
             }
+
+            // ========================================================
+            // READ GEMINI RESPONSE
+            // ========================================================
 
             var responseText =
                 response.Text?.Trim()
@@ -282,7 +326,7 @@ namespace DocumentManagement.API.Services
             // ========================================================
             // RETURN RESULT
             //
-            // The CONTROLLER will perform final business validation.
+            // The CONTROLLER performs final business validation.
             // ========================================================
 
             return new InvoiceData
