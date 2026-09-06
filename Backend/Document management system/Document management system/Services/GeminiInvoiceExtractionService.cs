@@ -48,7 +48,7 @@ namespace DocumentManagement.API.Services
 
                 "Extract structured information from the invoice text below.\n\n" +
 
-                "IMPORTANT RULES:\n" +
+                "IMPORTANT RULES:\n\n" +
 
                 "1. Extract the invoice number exactly.\n" +
                 "   Example: INV-20394 must remain INV-20394.\n\n" +
@@ -99,10 +99,51 @@ namespace DocumentManagement.API.Services
                 "Invoice text:\n\n" +
                 extractedText;
 
-            var response =
-                await client.Models.GenerateContentAsync(
-                 model: "gemini-3.7-flash",
-                    contents: prompt);
+            Google.GenAI.Types.GenerateContentResponse? response = null;
+
+            const int maxAttempts = 4;
+
+            for (var attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                try
+                {
+                    Console.WriteLine(
+                        $"Gemini invoice extraction attempt {attempt} of {maxAttempts}.");
+
+                    response =
+                        await client.Models.GenerateContentAsync(
+                            model: "gemini-3.7-flash",
+                            contents: prompt);
+
+                    break;
+                }
+                catch (Google.GenAI.ServerError ex)
+                {
+                    Console.WriteLine(
+                        $"Gemini server error on attempt {attempt}: {ex.Message}");
+
+                    if (attempt == maxAttempts)
+                    {
+                        throw;
+                    }
+
+                    var delaySeconds =
+                        Math.Pow(2, attempt);
+
+                    Console.WriteLine(
+                        $"Gemini appears temporarily unavailable. " +
+                        $"Retrying in {delaySeconds} seconds...");
+
+                    await Task.Delay(
+                        TimeSpan.FromSeconds(delaySeconds));
+                }
+            }
+
+            if (response == null)
+            {
+                throw new InvalidOperationException(
+                    "Gemini did not return a response.");
+            }
 
             var responseText =
                 response.Text?.Trim() ?? string.Empty;
@@ -132,7 +173,8 @@ namespace DocumentManagement.API.Services
 
             DateTime? invoiceDate = null;
 
-            if (!string.IsNullOrWhiteSpace(result.InvoiceDate))
+            if (!string.IsNullOrWhiteSpace(
+                result.InvoiceDate))
             {
                 if (DateTime.TryParseExact(
                     result.InvoiceDate,
@@ -150,15 +192,18 @@ namespace DocumentManagement.API.Services
                 DocumentId = documentId,
 
                 DocumentType =
-                    string.IsNullOrWhiteSpace(result.DocumentType)
+                    string.IsNullOrWhiteSpace(
+                        result.DocumentType)
                         ? "Invoice"
                         : result.DocumentType.Trim(),
 
                 InvoiceNumber =
-                    CleanString(result.InvoiceNumber),
+                    CleanString(
+                        result.InvoiceNumber),
 
                 Vendor =
-                    CleanString(result.Vendor),
+                    CleanString(
+                        result.Vendor),
 
                 InvoiceDate =
                     invoiceDate,
