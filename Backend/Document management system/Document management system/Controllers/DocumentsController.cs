@@ -155,18 +155,23 @@ namespace DocumentManagement.API.Controllers
                     });
                 }
 
-                if (string.IsNullOrWhiteSpace(
-                    extractedText))
-                {
-                    DeleteFileIfExists(filePath);
+              var isImageOrPdf =
+    extension == ".png" ||
+    extension == ".jpg" ||
+    extension == ".jpeg" ||
+    extension == ".pdf";
 
-                    return BadRequest(new
-                    {
-                        message =
-                            "No readable text was found in the document. Please upload a readable Invoice or Credit Note."
-                    });
-                }
+if (!isImageOrPdf &&
+    string.IsNullOrWhiteSpace(extractedText))
+{
+    DeleteFileIfExists(filePath);
 
+    return BadRequest(new
+    {
+        message =
+            "No readable text was found in the document. Please upload a readable Invoice or Credit Note."
+    });
+}
                 InvoiceData extractedInvoiceData;
 
                 try
