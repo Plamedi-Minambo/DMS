@@ -171,12 +171,13 @@ namespace DocumentManagement.API.Controllers
 
                 try
                 {
-                    extractedInvoiceData =
-                        await _geminiInvoiceExtractionService
-                            .ExtractInvoiceDataAsync(
-                                0,
-                                extractedText);
-                }
+                   extractedInvoiceData =
+    await _geminiInvoiceExtractionService
+        .ExtractInvoiceDataAsync(
+            0,
+            filePath,
+            extension,
+            extractedText);
                 catch (Exception ex)
                 {
                     Console.WriteLine(
