@@ -101,7 +101,7 @@ namespace DocumentManagement.API.Services
 
             var response =
                 await client.Models.GenerateContentAsync(
-                  model: "gemini-3.6-flash",
+                  model: "gemini-3.8-flash",
                     contents: prompt);
 
             var responseText =
