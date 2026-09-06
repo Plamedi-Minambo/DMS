@@ -31,10 +31,6 @@ namespace DocumentManagement.API.Controllers
             _geminiInvoiceExtractionService = geminiInvoiceExtractionService;
         }
 
-        // ============================================================
-        // UPLOAD DOCUMENT
-        // ============================================================
-
         [Authorize(Roles = "Admin,Reviewer,Manager,Finance")]
         [HttpPost("upload")]
         public async Task<IActionResult> Upload(
@@ -49,10 +45,12 @@ namespace DocumentManagement.API.Controllers
                 });
             }
 
-            var originalFileName = Path.GetFileName(file.FileName);
+            var originalFileName =
+                Path.GetFileName(file.FileName);
 
-            var extension = Path.GetExtension(originalFileName)
-                .ToLowerInvariant();
+            var extension =
+                Path.GetExtension(originalFileName)
+                    .ToLowerInvariant();
 
             var allowedExtensions = new[]
             {
@@ -72,9 +70,10 @@ namespace DocumentManagement.API.Controllers
                 });
             }
 
-            var uploadsFolder = Path.Combine(
-                _environment.ContentRootPath,
-                "Uploads");
+            var uploadsFolder =
+                Path.Combine(
+                    _environment.ContentRootPath,
+                    "Uploads");
 
             if (!Directory.Exists(uploadsFolder))
             {
@@ -84,16 +83,13 @@ namespace DocumentManagement.API.Controllers
             var storedFileName =
                 $"{Guid.NewGuid():N}{extension}";
 
-            var filePath = Path.Combine(
-                uploadsFolder,
-                storedFileName);
+            var filePath =
+                Path.Combine(
+                    uploadsFolder,
+                    storedFileName);
 
             try
             {
-                // ====================================================
-                // SAVE FILE
-                // ====================================================
-
                 await using (var stream = new FileStream(
                     filePath,
                     FileMode.Create,
@@ -103,27 +99,22 @@ namespace DocumentManagement.API.Controllers
                     await file.CopyToAsync(stream);
                 }
 
-                // ====================================================
-                // CALCULATE SHA256 HASH
-                // ====================================================
-
                 string fileHash;
 
                 await using (var hashStream =
                     System.IO.File.OpenRead(filePath))
                 {
-                    using var sha256 = SHA256.Create();
+                    using var sha256 =
+                        SHA256.Create();
 
                     var hashBytes =
-                        await sha256.ComputeHashAsync(hashStream);
+                        await sha256.ComputeHashAsync(
+                            hashStream);
 
                     fileHash =
-                        Convert.ToHexString(hashBytes);
+                        Convert.ToHexString(
+                            hashBytes);
                 }
-
-                // ====================================================
-                // CHECK EXACT FILE DUPLICATE
-                // ====================================================
 
                 var duplicateByFileHash =
                     await _context.Documents.AnyAsync(
@@ -139,10 +130,6 @@ namespace DocumentManagement.API.Controllers
                             "Duplicate document detected. This exact file has already been uploaded."
                     });
                 }
-
-                // ====================================================
-                // EXTRACT DOCUMENT CONTENT
-                // ====================================================
 
                 string extractedText;
 
@@ -168,7 +155,8 @@ namespace DocumentManagement.API.Controllers
                     });
                 }
 
-                if (string.IsNullOrWhiteSpace(extractedText))
+                if (string.IsNullOrWhiteSpace(
+                    extractedText))
                 {
                     DeleteFileIfExists(filePath);
 
@@ -178,10 +166,6 @@ namespace DocumentManagement.API.Controllers
                             "No readable text was found in the document. Please upload a readable Invoice or Credit Note."
                     });
                 }
-
-                // ====================================================
-                // GEMINI AI INVOICE EXTRACTION
-                // ====================================================
 
                 InvoiceData extractedInvoiceData;
 
@@ -210,7 +194,9 @@ namespace DocumentManagement.API.Controllers
                 }
 
                 var documentType =
-                    extractedInvoiceData.DocumentType?.Trim();
+                    extractedInvoiceData
+                        .DocumentType?
+                        .Trim();
 
                 var isInvoice =
                     string.Equals(
@@ -235,12 +221,9 @@ namespace DocumentManagement.API.Controllers
                     });
                 }
 
-                // ====================================================
-                // CHECK DUPLICATE INVOICE NUMBER
-                // ====================================================
-
                 var normalizedInvoiceNumber =
-                    extractedInvoiceData.InvoiceNumber?
+                    extractedInvoiceData
+                        .InvoiceNumber?
                         .Trim()
                         .ToLowerInvariant();
 
@@ -248,11 +231,12 @@ namespace DocumentManagement.API.Controllers
                     normalizedInvoiceNumber))
                 {
                     var duplicateByInvoiceNumber =
-                        await _context.InvoiceData.AnyAsync(i =>
-                            i.InvoiceNumber != null &&
-                            i.InvoiceNumber
-                                .Trim()
-                                .ToLower() ==
+                        await _context.InvoiceData.AnyAsync(
+                            i =>
+                                i.InvoiceNumber != null &&
+                                i.InvoiceNumber
+                                    .Trim()
+                                    .ToLower() ==
                                 normalizedInvoiceNumber);
 
                     if (duplicateByInvoiceNumber)
@@ -268,48 +252,47 @@ namespace DocumentManagement.API.Controllers
                     }
                 }
 
-                // ====================================================
-                // GET CURRENT USER
-                // ====================================================
-
                 var userId =
                     User.FindFirstValue(
                         ClaimTypes.NameIdentifier);
 
-                // ====================================================
-                // CREATE DOCUMENT
-                // ====================================================
-
                 var document = new Document
                 {
-                    FileName = originalFileName,
+                    FileName =
+                        originalFileName,
 
-                    FileType = file.ContentType,
+                    FileType =
+                        file.ContentType,
 
-                    FileSize = file.Length,
+                    FileSize =
+                        file.Length,
 
-                    FilePath = filePath,
+                    FilePath =
+                        filePath,
 
-                    StoredFileName = storedFileName,
+                    StoredFileName =
+                        storedFileName,
 
-                    FileHash = fileHash,
+                    FileHash =
+                        fileHash,
 
-                    UploadedAt = DateTime.UtcNow,
+                    UploadedAt =
+                        DateTime.UtcNow,
 
-                    Status = "Pending",
+                    Status =
+                        "Pending",
 
-                    Description = description,
+                    Description =
+                        description,
 
-                    UploadedById = userId
+                    UploadedById =
+                        userId
                 };
-
-                // ====================================================
-                // CREATE INVOICE DATA
-                // ====================================================
 
                 var invoiceData = new InvoiceData
                 {
-                    Document = document,
+                    Document =
+                        document,
 
                     DocumentType =
                         extractedInvoiceData.DocumentType,
@@ -339,10 +322,6 @@ namespace DocumentManagement.API.Controllers
                         extractedInvoiceData.ExtractionStatus
                 };
 
-                // ====================================================
-                // CREATE APPROVAL WORKFLOW
-                // ====================================================
-
                 var approvals = new[]
                 {
                     new Approval
@@ -370,25 +349,16 @@ namespace DocumentManagement.API.Controllers
                     }
                 };
 
-                // ====================================================
-                // ADD TO DATABASE
-                // ====================================================
+                _context.Documents.Add(
+                    document);
 
-                _context.Documents.Add(document);
+                _context.InvoiceData.Add(
+                    invoiceData);
 
-                _context.InvoiceData.Add(invoiceData);
-
-                _context.Approvals.AddRange(approvals);
-
-                // ====================================================
-                // SAVE
-                // ====================================================
+                _context.Approvals.AddRange(
+                    approvals);
 
                 await _context.SaveChangesAsync();
-
-                // ====================================================
-                // RETURN SUCCESS RESPONSE
-                // ====================================================
 
                 return Ok(new
                 {
@@ -438,72 +408,71 @@ namespace DocumentManagement.API.Controllers
             }
         }
 
-        // ============================================================
-        // GET ALL DOCUMENTS
-        // ============================================================
-
-        [Authorize(Roles = "Admin,Reviewer,Manager,Finance,Viewer")]
+        [Authorize(
+            Roles = "Admin,Reviewer,Manager,Finance,Viewer")]
         [HttpGet]
         public async Task<IActionResult> GetDocuments()
         {
-            var documents = await _context.Documents
-                .Include(d => d.UploadedBy)
-                .Include(d => d.InvoiceData)
-                .OrderByDescending(d => d.UploadedAt)
-                .Select(d => new
-                {
-                    d.Id,
-                    d.FileName,
-                    d.FileType,
-                    d.FileSize,
-                    d.Status,
-                    d.Description,
-                    d.UploadedAt,
+            var documents =
+                await _context.Documents
+                    .Include(d => d.UploadedBy)
+                    .Include(d => d.InvoiceData)
+                    .OrderByDescending(
+                        d => d.UploadedAt)
+                    .Select(d => new
+                    {
+                        d.Id,
+                        d.FileName,
+                        d.FileType,
+                        d.FileSize,
+                        d.Status,
+                        d.Description,
+                        d.UploadedAt,
 
-                    UploadedBy =
-                        d.UploadedBy != null
-                            ? d.UploadedBy.FullName
-                            : "Unknown",
+                        UploadedBy =
+                            d.UploadedBy != null
+                                ? d.UploadedBy.FullName
+                                : "Unknown",
 
-                    InvoiceData =
-                        d.InvoiceData == null
-                            ? null
-                            : new
-                            {
-                                d.InvoiceData.Id,
-                                d.InvoiceData.DocumentType,
-                                d.InvoiceData.InvoiceNumber,
-                                d.InvoiceData.Vendor,
-                                d.InvoiceData.InvoiceDate,
-                                d.InvoiceData.Amount,
-                                d.InvoiceData.VAT,
-                                d.InvoiceData.TotalAmount,
-                                d.InvoiceData.ExtractedAt,
-                                d.InvoiceData.ExtractionStatus
-                            }
-                })
-                .ToListAsync();
+                        InvoiceData =
+                            d.InvoiceData == null
+                                ? null
+                                : new
+                                {
+                                    d.InvoiceData.Id,
+                                    d.InvoiceData.DocumentType,
+                                    d.InvoiceData.InvoiceNumber,
+                                    d.InvoiceData.Vendor,
+                                    d.InvoiceData.InvoiceDate,
+                                    d.InvoiceData.Amount,
+                                    d.InvoiceData.VAT,
+                                    d.InvoiceData.TotalAmount,
+                                    d.InvoiceData.ExtractedAt,
+                                    d.InvoiceData.ExtractionStatus
+                                }
+                    })
+                    .ToListAsync();
 
             return Ok(documents);
         }
 
-        // ============================================================
-        // DOWNLOAD DOCUMENT
-        // ============================================================
-
-        [Authorize(Roles = "Admin,Reviewer,Manager,Finance")]
+        [Authorize(
+            Roles = "Admin,Reviewer,Manager,Finance")]
         [HttpGet("{id}/download")]
-        public async Task<IActionResult> DownloadDocument(int id)
+        public async Task<IActionResult> DownloadDocument(
+            int id)
         {
             var document =
                 await _context.Documents
-                    .FirstOrDefaultAsync(d => d.Id == id);
+                    .FirstOrDefaultAsync(
+                        d => d.Id == id);
 
             if (document == null)
             {
                 return NotFound(new
                 {
-                    message = "Document not found."
+                    message =
+                        "Document not found."
                 });
             }
 
@@ -538,23 +507,22 @@ namespace DocumentManagement.API.Controllers
                 document.FileName);
         }
 
-        // ============================================================
-        // DELETE DOCUMENT
-        // ============================================================
-
         [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteDocument(int id)
+        public async Task<IActionResult> DeleteDocument(
+            int id)
         {
             var document =
                 await _context.Documents
-                    .FirstOrDefaultAsync(d => d.Id == id);
+                    .FirstOrDefaultAsync(
+                        d => d.Id == id);
 
             if (document == null)
             {
                 return NotFound(new
                 {
-                    message = "Document not found."
+                    message =
+                        "Document not found."
                 });
             }
 
@@ -590,19 +558,18 @@ namespace DocumentManagement.API.Controllers
             });
         }
 
-        // ============================================================
-        // HELPER: DELETE FILE SAFELY
-        // ============================================================
-
         private static void DeleteFileIfExists(
             string filePath)
         {
             try
             {
-                if (!string.IsNullOrWhiteSpace(filePath) &&
-                    System.IO.File.Exists(filePath))
+                if (!string.IsNullOrWhiteSpace(
+                    filePath) &&
+                    System.IO.File.Exists(
+                        filePath))
                 {
-                    System.IO.File.Delete(filePath);
+                    System.IO.File.Delete(
+                        filePath);
                 }
             }
             catch (Exception ex)
@@ -610,5 +577,6 @@ namespace DocumentManagement.API.Controllers
                 Console.WriteLine(
                     $"Could not delete temporary file: {ex.Message}");
             }
+        }
     }
 }
