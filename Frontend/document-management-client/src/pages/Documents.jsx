@@ -165,273 +165,266 @@ function Documents() {
     // CONFIRM UPLOAD DOCUMENT
     // ========================================
 
-    const confirmUpload = async () => {
-        if (!selectedFile) {
+   const confirmUpload = async () => {
+    if (!selectedFile) {
+        return;
+    }
+
+    setUploadDetailsPopup(false);
+    setUploadError("");
+    setUploadSuccess("");
+
+    try {
+        setUploading(true);
+
+        const uploadedFileName =
+            selectedFile.name;
+
+        const formData = new FormData();
+
+        formData.append(
+            "file",
+            selectedFile
+        );
+
+        formData.append(
+            "description",
+            description
+        );
+
+        const response = await api.post(
+            "/Documents/upload",
+            formData
+        );
+
+        // ========================================
+        // REFRESH DOCUMENT LIST
+        // ========================================
+
+        const documentsResponse =
+            await api.get("/Documents");
+
+        const updatedDocuments =
+            documentsResponse.data;
+
+        setDocuments(
+            updatedDocuments
+        );
+
+        // ========================================
+        // FIND THE UPLOADED DOCUMENT
+        // ========================================
+
+        let uploadedDocument = null;
+
+        const returnedDocument =
+            response.data?.document;
+
+        if (
+            returnedDocument?.id
+        ) {
+            uploadedDocument =
+                updatedDocuments.find(
+                    (document) =>
+                        document.id ===
+                        returnedDocument.id
+                );
+        }
+
+        // ========================================
+        // FALLBACK: DOCUMENT ID
+        // ========================================
+
+        if (
+            !uploadedDocument &&
+            returnedDocument?.documentId
+        ) {
+            uploadedDocument =
+                updatedDocuments.find(
+                    (document) =>
+                        document.id ===
+                        returnedDocument.documentId
+                );
+        }
+
+        // ========================================
+        // FALLBACK: MATCH FILE NAME
+        // ========================================
+
+        if (!uploadedDocument) {
+            const matchingDocuments =
+                updatedDocuments
+                    .filter(
+                        (document) =>
+                            document.fileName ===
+                            uploadedFileName
+                    )
+                    .sort(
+                        (a, b) =>
+                            new Date(
+                                b.uploadedAt
+                            ) -
+                            new Date(
+                                a.uploadedAt
+                            )
+                    );
+
+            uploadedDocument =
+                matchingDocuments[0];
+        }
+
+        // ========================================
+        // SHOW EXTRACTION POPUP
+        // ========================================
+
+        if (uploadedDocument) {
+            setExtractionPopup(
+                uploadedDocument
+            );
+        } else {
+            setUploadSuccess(
+                response.data?.message ||
+                "Document uploaded successfully."
+            );
+        }
+
+        // ========================================
+        // CLEAR FORM
+        // ========================================
+
+        setSelectedFile(null);
+        setDescription("");
+
+        const fileInput =
+            document.getElementById(
+                "documentFile"
+            );
+
+        if (fileInput) {
+            fileInput.value = "";
+        }
+
+    } catch (error) {
+        console.error(
+            "Upload error:",
+            error
+        );
+
+        // ========================================
+        // UNAUTHORIZED
+        // ========================================
+
+        if (
+            error.response?.status ===
+            401
+        ) {
+            logout();
+            navigate("/login");
             return;
         }
 
-        setUploadDetailsPopup(false);
-        setUploadError("");
-        setUploadSuccess("");
+        // ========================================
+        // FORBIDDEN
+        // ========================================
 
-        try {
-            setUploading(true);
-
-            const uploadedFileName =
-                selectedFile.name;
-
-            const formData = new FormData();
-
-            formData.append(
-                "file",
-                selectedFile
+        if (
+            error.response?.status ===
+            403
+        ) {
+            showAuthorizationPopup(
+                "You do not have authorization to upload documents."
             );
+            return;
+        }
 
-            formData.append(
-                "description",
-                description
+        // ========================================
+        // NOT FOUND
+        // ========================================
+
+        if (
+            error.response?.status ===
+            404
+        ) {
+            setUploadError(
+                "The upload service could not be found. Please check that the backend API is running and the API address is configured correctly."
             );
+            return;
+        }
 
-            const response = await api.post(
-                "/Documents/upload",
-                formData,
-                {
-                    headers: {
-                        "Content-Type":
-                            "multipart/form-data",
-                    },
-                }
-            );
+        // ========================================
+        // DUPLICATE
+        // ========================================
 
-            // ========================================
-            // REFRESH DOCUMENT LIST
-            // ========================================
-
-            const documentsResponse =
-                await api.get("/Documents");
-
-            const updatedDocuments =
-                documentsResponse.data;
-
-            setDocuments(
-                updatedDocuments
-            );
-
-            // ========================================
-            // FIND THE UPLOADED DOCUMENT
-            // ========================================
-
-            let uploadedDocument = null;
-
-            const returnedDocument =
-                response.data?.document;
-
-            if (
-                returnedDocument?.id
-            ) {
-                uploadedDocument =
-                    updatedDocuments.find(
-                        (document) =>
-                            document.id ===
-                            returnedDocument.id
-                    );
-            }
-
-            // ========================================
-            // FALLBACK: DOCUMENT ID
-            // ========================================
-
-            if (
-                !uploadedDocument &&
-                returnedDocument?.documentId
-            ) {
-                uploadedDocument =
-                    updatedDocuments.find(
-                        (document) =>
-                            document.id ===
-                            returnedDocument.documentId
-                    );
-            }
-
-            // ========================================
-            // FALLBACK: MATCH FILE NAME
-            // ========================================
-
-            if (!uploadedDocument) {
-                const matchingDocuments =
-                    updatedDocuments
-                        .filter(
-                            (document) =>
-                                document.fileName ===
-                                uploadedFileName
-                        )
-                        .sort(
-                            (a, b) =>
-                                new Date(
-                                    b.uploadedAt
-                                ) -
-                                new Date(
-                                    a.uploadedAt
-                                )
-                        );
-
-                uploadedDocument =
-                    matchingDocuments[0];
-            }
-
-            // ========================================
-            // SHOW EXTRACTION POPUP
-            // ========================================
-
-            if (uploadedDocument) {
-                setExtractionPopup(
-                    uploadedDocument
-                );
-            } else {
-                setUploadSuccess(
-                    response.data?.message ||
-                    "Document uploaded successfully."
-                );
-            }
-
-            // ========================================
-            // CLEAR FORM
-            // ========================================
-
-            setSelectedFile(null);
-            setDescription("");
-
-            const fileInput =
-                document.getElementById(
-                    "documentFile"
-                );
-
-            if (fileInput) {
-                fileInput.value = "";
-            }
-
-        } catch (error) {
-            console.error(
-                "Upload error:",
-                error
-            );
-
-            // ========================================
-            // UNAUTHORIZED
-            // ========================================
-
-            if (
-                error.response?.status ===
-                401
-            ) {
-                logout();
-                navigate("/login");
-                return;
-            }
-
-            // ========================================
-            // FORBIDDEN
-            // ========================================
-
-            if (
-                error.response?.status ===
-                403
-            ) {
-                showAuthorizationPopup(
-                    "You do not have authorization to upload documents."
-                );
-                return;
-            }
-
-            // ========================================
-            // NOT FOUND
-            // ========================================
-
-            if (
-                error.response?.status ===
-                404
-            ) {
-                setUploadError(
-                    "The upload service could not be found. Please check that the backend API is running and the API address is configured correctly."
-                );
-                return;
-            }
-
-            // ========================================
-            // DUPLICATE
-            // ========================================
-
-            if (
-                error.response?.status ===
-                409
-            ) {
-                setUploadError(
-                    error.response?.data?.message ||
-                    "Duplicate document detected."
-                );
-                return;
-            }
-
-            // ========================================
-            // DOCUMENT CONTENT REJECTED
-            // ========================================
-
-            if (
-                error.response?.status ===
-                422
-            ) {
-                setUploadError(
-                    error.response?.data?.message ||
-                    "This document is not a valid Invoice or Credit Note."
-                );
-                return;
-            }
-
-            // ========================================
-            // BAD REQUEST
-            // ========================================
-
-            if (
-                error.response?.status ===
-                400
-            ) {
-                setUploadError(
-                    error.response?.data?.message ||
-                    "The document could not be uploaded. Please make sure it is a readable Invoice or Credit Note."
-                );
-                return;
-            }
-
-            // ========================================
-            // SERVER ERROR
-            // ========================================
-
-            if (
-                error.response?.status >=
-                500
-            ) {
-                setUploadError(
-                    error.response?.data?.message ||
-                    "The server encountered an error while processing the document."
-                );
-                return;
-            }
-
-            // ========================================
-            // GENERAL ERROR
-            // ========================================
-
+        if (
+            error.response?.status ===
+            409
+        ) {
             setUploadError(
                 error.response?.data?.message ||
-                error.message ||
-                "Failed to upload the document."
+                "Duplicate document detected."
             );
-
-        } finally {
-            setUploading(false);
+            return;
         }
-    };
 
+        // ========================================
+        // DOCUMENT CONTENT REJECTED
+        // ========================================
+
+        if (
+            error.response?.status ===
+            422
+        ) {
+            setUploadError(
+                error.response?.data?.message ||
+                "This document is not a valid Invoice or Credit Note."
+            );
+            return;
+        }
+
+        // ========================================
+        // BAD REQUEST
+        // ========================================
+
+        if (
+            error.response?.status ===
+            400
+        ) {
+            setUploadError(
+                error.response?.data?.message ||
+                "The document could not be uploaded. Please make sure it is a readable Invoice or Credit Note."
+            );
+            return;
+        }
+
+        // ========================================
+        // SERVER ERROR
+        // ========================================
+
+        if (
+            error.response?.status >=
+            500
+        ) {
+            setUploadError(
+                error.response?.data?.message ||
+                "The server encountered an error while processing the document."
+            );
+            return;
+        }
+
+        // ========================================
+        // GENERAL ERROR
+        // ========================================
+
+        setUploadError(
+            error.response?.data?.message ||
+            error.message ||
+            "Failed to upload the document."
+        );
+
+    } finally {
+        setUploading(false);
+    }
+};
     // ========================================
     // DOWNLOAD DOCUMENT
     // ========================================
