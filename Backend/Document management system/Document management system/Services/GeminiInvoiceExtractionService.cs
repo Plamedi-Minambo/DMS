@@ -16,7 +16,7 @@ namespace DocumentManagement.API.Services
         {
             _apiKey =
                 configuration["Gemini:ApiKey"]
-                ?? Environment.GetEnvironmentVariable("GEMINI_API_KEY")
+                ?? System.Environment.GetEnvironmentVariable("GEMINI_API_KEY")
                 ?? string.Empty;
 
             if (string.IsNullOrWhiteSpace(_apiKey))
@@ -44,7 +44,7 @@ namespace DocumentManagement.API.Services
                     nameof(filePath));
             }
 
-            if (!File.Exists(filePath))
+            if (!System.IO.File.Exists(filePath))
             {
                 throw new FileNotFoundException(
                     "Invoice file could not be found.",
@@ -68,18 +68,13 @@ namespace DocumentManagement.API.Services
             // IMAGE / PDF
             //
             // Send the ORIGINAL document directly to Gemini.
-            //
-            // No OCR is required before Gemini for:
-            // PNG
-            // JPG
-            // JPEG
-            // PDF
+            // No OCR is required before Gemini for these file types.
             // ========================================================
 
             if (extension is ".png" or ".jpg" or ".jpeg" or ".pdf")
             {
                 var fileBytes =
-                    await File.ReadAllBytesAsync(filePath);
+                    await System.IO.File.ReadAllBytesAsync(filePath);
 
                 if (fileBytes.Length == 0)
                 {
@@ -157,17 +152,17 @@ namespace DocumentManagement.API.Services
             // GEMINI MODELS
             //
             // Primary:
-            // gemini-3.8-flash
+            // gemini-3.7-flash
             //
             // Fallback:
-            // gemini-3.7-flash
+            // gemini-3.6-flash
             // ========================================================
 
             var models =
                 new[]
                 {
-                    "gemini-3.8-flash",
-                    "gemini-3.7-flash"
+                    "gemini-3.7-flash",
+                    "gemini-3.6-flash"
                 };
 
             GenerateContentResponse? response = null;
@@ -267,9 +262,6 @@ namespace DocumentManagement.API.Services
                     "Gemini returned an empty response.");
             }
 
-            // Do not log the raw invoice response.
-            // It may contain financial or customer information.
-
             responseText =
                 CleanJsonResponse(
                     responseText);
@@ -313,8 +305,6 @@ namespace DocumentManagement.API.Services
 
             // ========================================================
             // PARSE INVOICE DATE
-            //
-            // Gemini is instructed to return yyyy-MM-dd.
             // ========================================================
 
             DateTime? invoiceDate = null;
@@ -335,9 +325,9 @@ namespace DocumentManagement.API.Services
             }
 
             // ========================================================
-            // RETURN EXTRACTED DATA
+            // RETURN RESULT
             //
-            // The DocumentsController performs final validation.
+            // The controller performs final business validation.
             // ========================================================
 
             return new InvoiceData
@@ -491,24 +481,9 @@ namespace DocumentManagement.API.Services
 
                 4. VAT means the actual tax amount charged on the document.
 
-                   Example:
-
-                   VAT 15% = 4477.50
-
-                   Then:
-
-                   vat = 4477.50
-
 
                 5. amount means the subtotal / net amount before VAT,
                    after applicable discounts.
-
-                   Example:
-
-                   Subtotal = 30850.00
-                   Discount = 1000.00
-
-                   amount = 29850.00
 
 
                 6. totalAmount means the final amount payable,
@@ -543,26 +518,10 @@ namespace DocumentManagement.API.Services
                    spaces
                    currency symbols
 
-                   Example:
-
-                   ZAR 5,757.00
-
-                   must become:
-
-                   5757.00
-
 
                 9. Return invoiceDate in exactly this format:
 
                    yyyy-MM-dd
-
-                   Example:
-
-                   02 Jul 2026
-
-                   must become:
-
-                   2026-07-02
 
 
                 10. If a field cannot be determined reliably,
@@ -587,41 +546,6 @@ namespace DocumentManagement.API.Services
 
                     when determining the correct values.
 
-
-                ============================================================
-                INVOICE TOTAL RULES
-                ============================================================
-
-                When several financial values exist, carefully distinguish:
-
-                - subtotal / net amount
-                - discounts
-                - VAT / tax
-                - invoice total
-                - previous balance
-                - payments
-                - amount due
-
-                amount should normally represent the current invoice subtotal
-                before VAT after discounts.
-
-                vat should represent only the tax charged on the current invoice.
-
-                totalAmount should represent the current invoice final total
-                payable after VAT and discounts.
-
-                Do not use:
-
-                - previous balances
-                - historical account balances
-                - old invoice totals
-                - payment amounts
-                - deposits
-
-                unless the document clearly indicates that value is the final
-                total of the current invoice.
-
-
                 ============================================================
                 REAL INVOICE REQUIREMENTS
                 ============================================================
@@ -644,15 +568,11 @@ namespace DocumentManagement.API.Services
                 VAT itself is NOT mandatory because some legitimate invoices
                 may not charge VAT.
 
-                A document can still be a genuine invoice if some optional
-                information is absent.
-
-                However, if the document does not contain enough evidence to
+                If the document does not contain enough evidence to
                 reasonably identify it as a genuine Invoice or Credit Note,
                 return:
 
                 documentType = "Other"
-
 
                 ============================================================
                 RESPONSE FORMAT
@@ -668,7 +588,6 @@ namespace DocumentManagement.API.Services
                 - comments
                 - additional text
 
-
                 Use exactly these property names:
 
                 documentType
@@ -678,7 +597,6 @@ namespace DocumentManagement.API.Services
                 amount
                 vat
                 totalAmount
-
 
                 Example Invoice:
 
@@ -691,20 +609,6 @@ namespace DocumentManagement.API.Services
                   "vat": 4477.50,
                   "totalAmount": 34327.50
                 }
-
-
-                Example Credit Note:
-
-                {
-                  "documentType": "Credit Note",
-                  "invoiceNumber": "CN-10452",
-                  "vendor": "Northgate Retail Group (Pty) Ltd",
-                  "invoiceDate": "2026-09-05",
-                  "amount": 1000.00,
-                  "vat": 150.00,
-                  "totalAmount": 1150.00
-                }
-
 
                 Example unrelated document:
 
