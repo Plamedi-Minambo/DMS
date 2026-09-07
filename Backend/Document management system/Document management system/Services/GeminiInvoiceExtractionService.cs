@@ -158,13 +158,13 @@ namespace DocumentManagement.API.Services
             // gemini-3.6-flash
             // ========================================================
 
-            var models =
-                new[]
-                {
-                    "gemini-3.6-flash",
-                    "gemini-3.5-flash"
-                };
-
+          var models =
+    new[]
+    {
+        "gemini-3.5-flash-lite", // Primary
+        "gemini-3.6-flash",      // Fallback 1
+        "gemini-3.7-flash"       // Fallback 2
+    };
             GenerateContentResponse? response = null;
 
             const int maxAttemptsPerModel = 3;
