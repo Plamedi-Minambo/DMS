@@ -149,7 +149,6 @@ builder.Services.AddCors(options =>
 // APPLICATION SERVICES
 // ============================================================
 
-builder.Services.AddScoped<PdfTextExtractionService>();
 builder.Services.AddScoped<InvoiceExtractionService>();
 builder.Services.AddScoped<DocumentContentExtractionService>();
 
