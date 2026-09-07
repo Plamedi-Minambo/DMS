@@ -31,12 +31,20 @@ namespace DocumentManagement.API.Controllers
             _geminiInvoiceExtractionService = geminiInvoiceExtractionService;
         }
 
+        // ================================================================
+        // UPLOAD DOCUMENT
+        // ================================================================
+
         [Authorize(Roles = "Admin,Reviewer,Manager,Finance")]
         [HttpPost("upload")]
         public async Task<IActionResult> Upload(
             IFormFile file,
             [FromForm] string? description)
         {
+            // ============================================================
+            // FILE VALIDATION
+            // ============================================================
+
             if (file == null || file.Length == 0)
             {
                 return BadRequest(new
@@ -70,6 +78,10 @@ namespace DocumentManagement.API.Controllers
                 });
             }
 
+            // ============================================================
+            // CREATE UPLOADS FOLDER
+            // ============================================================
+
             var uploadsFolder =
                 Path.Combine(
                     _environment.ContentRootPath,
@@ -90,6 +102,10 @@ namespace DocumentManagement.API.Controllers
 
             try
             {
+                // ========================================================
+                // SAVE ORIGINAL FILE
+                // ========================================================
+
                 await using (var stream = new FileStream(
                     filePath,
                     FileMode.Create,
@@ -98,6 +114,10 @@ namespace DocumentManagement.API.Controllers
                 {
                     await file.CopyToAsync(stream);
                 }
+
+                // ========================================================
+                // GENERATE FILE HASH
+                // ========================================================
 
                 string fileHash;
 
@@ -116,6 +136,10 @@ namespace DocumentManagement.API.Controllers
                             hashBytes);
                 }
 
+                // ========================================================
+                // DUPLICATE FILE CHECK
+                // ========================================================
+
                 var duplicateByFileHash =
                     await _context.Documents.AnyAsync(
                         d => d.FileHash == fileHash);
@@ -131,34 +155,15 @@ namespace DocumentManagement.API.Controllers
                     });
                 }
 
-                string extractedText;
-
-                try
-                {
-                    extractedText =
-                        await _documentContentExtractionService
-                            .ExtractTextAsync(
-                                filePath,
-                                extension);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(
-                        $"Document content extraction failed: {ex.Message}");
-
-                    DeleteFileIfExists(filePath);
-
-                    return BadRequest(new
-                    {
-                        message =
-                            "The document could not be read. Please upload a valid PDF, DOCX, JPG, JPEG, or PNG file."
-                    });
-                }
-
-                // ============================================================
-                // OCR/TEXT IS REQUIRED ONLY FOR DOCX
-                // PNG/JPG/JPEG/PDF ARE SENT DIRECTLY TO GEMINI
-                // ============================================================
+                // ========================================================
+                // DOCUMENT CONTENT PREPARATION
+                //
+                // PDF / PNG / JPG / JPEG:
+                // Gemini receives and reads the original file directly.
+                //
+                // DOCX:
+                // Text is extracted first and then sent to Gemini.
+                // ========================================================
 
                 var isImageOrPdf =
                     extension == ".png" ||
@@ -166,21 +171,58 @@ namespace DocumentManagement.API.Controllers
                     extension == ".jpeg" ||
                     extension == ".pdf";
 
-                if (!isImageOrPdf &&
-                    string.IsNullOrWhiteSpace(extractedText))
-                {
-                    DeleteFileIfExists(filePath);
+                string extractedText = string.Empty;
 
-                    return BadRequest(new
+                // ========================================================
+                // DOCX TEXT EXTRACTION ONLY
+                // ========================================================
+
+                if (!isImageOrPdf)
+                {
+                    try
                     {
-                        message =
-                            "No readable text was found in the document. Please upload a readable Invoice or Credit Note."
-                    });
+                        extractedText =
+                            await _documentContentExtractionService
+                                .ExtractTextAsync(
+                                    filePath,
+                                    extension);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(
+                            $"DOCX text extraction failed: {ex.Message}");
+
+                        DeleteFileIfExists(filePath);
+
+                        return BadRequest(new
+                        {
+                            message =
+                                "The DOCX document could not be read. Please upload a valid readable Invoice or Credit Note."
+                        });
+                    }
+
+                    if (string.IsNullOrWhiteSpace(
+                        extractedText))
+                    {
+                        DeleteFileIfExists(filePath);
+
+                        return BadRequest(new
+                        {
+                            message =
+                                "No readable text was found in the DOCX document. Please upload a readable Invoice or Credit Note."
+                        });
+                    }
                 }
 
-                // ============================================================
+                // ========================================================
                 // GEMINI AI EXTRACTION
-                // ============================================================
+                //
+                // PDF / PNG / JPG / JPEG:
+                // Original file goes directly to Gemini.
+                //
+                // DOCX:
+                // Extracted text goes to Gemini.
+                // ========================================================
 
                 InvoiceData extractedInvoiceData;
 
@@ -206,13 +248,13 @@ namespace DocumentManagement.API.Controllers
                         new
                         {
                             message =
-                                "The document text was read successfully, but Gemini AI could not extract the invoice information. Please try again."
+                                "Gemini AI could not process the document. Please try again."
                         });
                 }
 
-                // ============================================================
+                // ========================================================
                 // DOCUMENT TYPE VALIDATION
-                // ============================================================
+                // ========================================================
 
                 var documentType =
                     extractedInvoiceData
@@ -242,9 +284,9 @@ namespace DocumentManagement.API.Controllers
                     });
                 }
 
-                // ============================================================
+                // ========================================================
                 // STRICT INVOICE / CREDIT NOTE VALIDATION
-                // ============================================================
+                // ========================================================
 
                 // Invoice / Credit Note number is mandatory
                 if (string.IsNullOrWhiteSpace(
@@ -308,7 +350,10 @@ namespace DocumentManagement.API.Controllers
                     });
                 }
 
-                // Monetary values cannot be negative
+                // ========================================================
+                // MONETARY VALUE VALIDATION
+                // ========================================================
+
                 if (extractedInvoiceData.Amount.Value < 0 ||
                     extractedInvoiceData.TotalAmount.Value < 0 ||
                     (extractedInvoiceData.VAT.HasValue &&
@@ -323,9 +368,13 @@ namespace DocumentManagement.API.Controllers
                     });
                 }
 
-                // Total amount should not normally be less than
-                // the amount before VAT.
-                // A small tolerance is allowed for rounding.
+                // ========================================================
+                // TOTAL VALIDATION
+                //
+                // Total should not normally be below subtotal.
+                // 0.01 tolerance allows normal rounding differences.
+                // ========================================================
+
                 if (extractedInvoiceData.TotalAmount.Value + 0.01m <
                     extractedInvoiceData.Amount.Value)
                 {
@@ -338,9 +387,9 @@ namespace DocumentManagement.API.Controllers
                     });
                 }
 
-                // ============================================================
+                // ========================================================
                 // DUPLICATE INVOICE NUMBER CHECK
-                // ============================================================
+                // ========================================================
 
                 var normalizedInvoiceNumber =
                     extractedInvoiceData
@@ -373,9 +422,9 @@ namespace DocumentManagement.API.Controllers
                     }
                 }
 
-                // ============================================================
+                // ========================================================
                 // AUTHENTICATED USER VALIDATION
-                // ============================================================
+                // ========================================================
 
                 var userId =
                     User.FindFirstValue(
@@ -394,7 +443,8 @@ namespace DocumentManagement.API.Controllers
 
                 var userExists =
                     await _context.Users
-                        .AnyAsync(u => u.Id == userId);
+                        .AnyAsync(
+                            u => u.Id == userId);
 
                 if (!userExists)
                 {
@@ -410,9 +460,9 @@ namespace DocumentManagement.API.Controllers
                     });
                 }
 
-                // ============================================================
+                // ========================================================
                 // CREATE DOCUMENT
-                // ============================================================
+                // ========================================================
 
                 var document = new Document
                 {
@@ -447,9 +497,9 @@ namespace DocumentManagement.API.Controllers
                         userId
                 };
 
-                // ============================================================
+                // ========================================================
                 // CREATE INVOICE DATA
-                // ============================================================
+                // ========================================================
 
                 var invoiceData = new InvoiceData
                 {
@@ -484,9 +534,9 @@ namespace DocumentManagement.API.Controllers
                         extractedInvoiceData.ExtractionStatus
                 };
 
-                // ============================================================
+                // ========================================================
                 // APPROVAL WORKFLOW
-                // ============================================================
+                // ========================================================
 
                 var approvals = new[]
                 {
@@ -515,9 +565,9 @@ namespace DocumentManagement.API.Controllers
                     }
                 };
 
-                // ============================================================
+                // ========================================================
                 // SAVE TO DATABASE
-                // ============================================================
+                // ========================================================
 
                 _context.Documents.Add(
                     document);
@@ -530,9 +580,9 @@ namespace DocumentManagement.API.Controllers
 
                 await _context.SaveChangesAsync();
 
-                // ============================================================
+                // ========================================================
                 // SUCCESS RESPONSE
-                // ============================================================
+                // ========================================================
 
                 return Ok(new
                 {
@@ -568,7 +618,7 @@ namespace DocumentManagement.API.Controllers
             catch (Exception ex)
             {
                 Console.WriteLine(
-                    $"Document upload failed: {ex.Message}");
+                    $"Document upload failed: {ex}");
 
                 DeleteFileIfExists(filePath);
 
