@@ -162,8 +162,8 @@ namespace DocumentManagement.API.Services
     new[]
     {
         "gemini-3.5-flash-lite", // Primary
-        "gemini-3.6-flash",      // Fallback 1
-        "gemini-3.7-flash"       // Fallback 2
+        "gemini-3.8-flash",      // Fallback 1
+        "gemini-3.6-flash"       // Fallback 2
     };
             GenerateContentResponse? response = null;
 
