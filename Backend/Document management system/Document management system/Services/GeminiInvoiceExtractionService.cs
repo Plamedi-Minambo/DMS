@@ -16,7 +16,7 @@ namespace DocumentManagement.API.Services
         {
             _apiKey =
                 configuration["Gemini:ApiKey"]
-                ?? System.Environment.GetEnvironmentVariable("GEMINI_API_KEY")
+                ?? Environment.GetEnvironmentVariable("GEMINI_API_KEY")
                 ?? string.Empty;
 
             if (string.IsNullOrWhiteSpace(_apiKey))
@@ -44,7 +44,7 @@ namespace DocumentManagement.API.Services
                     nameof(filePath));
             }
 
-            if (!System.IO.File.Exists(filePath))
+            if (!File.Exists(filePath))
             {
                 throw new FileNotFoundException(
                     "Invoice file could not be found.",
@@ -68,13 +68,18 @@ namespace DocumentManagement.API.Services
             // IMAGE / PDF
             //
             // Send the ORIGINAL document directly to Gemini.
-            // This bypasses OCR as the primary source for these files.
+            //
+            // No OCR is required before Gemini for:
+            // PNG
+            // JPG
+            // JPEG
+            // PDF
             // ========================================================
 
             if (extension is ".png" or ".jpg" or ".jpeg" or ".pdf")
             {
                 var fileBytes =
-                    await System.IO.File.ReadAllBytesAsync(filePath);
+                    await File.ReadAllBytesAsync(filePath);
 
                 if (fileBytes.Length == 0)
                 {
@@ -112,7 +117,8 @@ namespace DocumentManagement.API.Services
             // ========================================================
             // DOCX
             //
-            // Gemini receives the extracted DOCX text.
+            // The controller extracts DOCX text first.
+            // Gemini receives the extracted text.
             // ========================================================
 
             else if (extension == ".docx")
@@ -150,24 +156,21 @@ namespace DocumentManagement.API.Services
             // ========================================================
             // GEMINI MODELS
             //
-            // Primary model:
+            // Primary:
             // gemini-3.8-flash
             //
-            // Fallback model:
+            // Fallback:
             // gemini-3.7-flash
-            //
-            // If the primary model is temporarily unavailable,
-            // the service automatically falls back to the second model.
             // ========================================================
 
             var models =
                 new[]
                 {
-                    "gemini-3.7-flash",
-                    "gemini-3.6-flash"
+                    "gemini-3.8-flash",
+                    "gemini-3.7-flash"
                 };
 
-            Google.GenAI.Types.GenerateContentResponse? response = null;
+            GenerateContentResponse? response = null;
 
             const int maxAttemptsPerModel = 3;
 
@@ -218,14 +221,17 @@ namespace DocumentManagement.API.Services
                         }
 
                         var delaySeconds =
-                            Math.Pow(2, attempt);
+                            Math.Pow(
+                                2,
+                                attempt);
 
                         Console.WriteLine(
                             $"Gemini model '{model}' appears temporarily unavailable. " +
                             $"Retrying in {delaySeconds} seconds...");
 
                         await Task.Delay(
-                            TimeSpan.FromSeconds(delaySeconds));
+                            TimeSpan.FromSeconds(
+                                delaySeconds));
                     }
                 }
 
@@ -254,17 +260,19 @@ namespace DocumentManagement.API.Services
                 response.Text?.Trim()
                 ?? string.Empty;
 
-            if (string.IsNullOrWhiteSpace(responseText))
+            if (string.IsNullOrWhiteSpace(
+                responseText))
             {
                 throw new InvalidOperationException(
                     "Gemini returned an empty response.");
             }
 
-            Console.WriteLine(
-                $"Gemini raw invoice response: {responseText}");
+            // Do not log the raw invoice response.
+            // It may contain financial or customer information.
 
             responseText =
-                CleanJsonResponse(responseText);
+                CleanJsonResponse(
+                    responseText);
 
             GeminiInvoiceResult? result;
 
@@ -275,7 +283,8 @@ namespace DocumentManagement.API.Services
                         responseText,
                         new JsonSerializerOptions
                         {
-                            PropertyNameCaseInsensitive = true
+                            PropertyNameCaseInsensitive =
+                                true
                         });
             }
             catch (JsonException ex)
@@ -303,7 +312,9 @@ namespace DocumentManagement.API.Services
                     result.DocumentType);
 
             // ========================================================
-            // PARSE DATE
+            // PARSE INVOICE DATE
+            //
+            // Gemini is instructed to return yyyy-MM-dd.
             // ========================================================
 
             DateTime? invoiceDate = null;
@@ -324,9 +335,9 @@ namespace DocumentManagement.API.Services
             }
 
             // ========================================================
-            // RETURN RESULT
+            // RETURN EXTRACTED DATA
             //
-            // The CONTROLLER performs final business validation.
+            // The DocumentsController performs final validation.
             // ========================================================
 
             return new InvoiceData
@@ -426,23 +437,71 @@ namespace DocumentManagement.API.Services
                 1. Extract the invoice number exactly as displayed.
 
                    Example:
-                   INV-20394 must remain INV-20394.
 
-                2. In this system, "vendor" means the customer/company shown in
-                   the BILL TO, BILLED TO, CUSTOMER, or equivalent customer
-                   section.
+                   INV-20394
+
+                   must remain:
+
+                   INV-20394
+
+
+                2. In this system, "vendor" means the supplier, seller,
+                   issuer, service provider, or business that issued the
+                   Invoice or Credit Note.
+
+                   Do NOT use the customer, BILL TO, BILLED TO, buyer,
+                   recipient, debtor, account holder, or client as the vendor.
+
+                   If the document contains both a supplier and a customer,
+                   always return the supplier/business that issued the document.
+
+                   Supplier information may appear:
+
+                   - in the document header
+                   - beside a company logo
+                   - in banking details
+                   - beside company registration information
+                   - beside supplier VAT information
+                   - in the FROM or SUPPLIER section
+
+                   Customer information may appear under headings such as:
+
+                   - BILL TO
+                   - BILLED TO
+                   - CUSTOMER
+                   - CLIENT
+                   - ACCOUNT
+                   - SOLD TO
+
+                   These customer values must NOT be returned as the vendor.
+
 
                 3. Never use a VAT registration number as the VAT monetary value.
 
                    Example:
+
                    VAT No: 4650198237
 
-                   This is a registration number and must NOT become the VAT
-                   amount.
+                   This is a VAT registration number.
+
+                   It must NOT become:
+
+                   vat = 4650198237
+
 
                 4. VAT means the actual tax amount charged on the document.
 
-                5. amount means the amount before VAT after discounts.
+                   Example:
+
+                   VAT 15% = 4477.50
+
+                   Then:
+
+                   vat = 4477.50
+
+
+                5. amount means the subtotal / net amount before VAT,
+                   after applicable discounts.
 
                    Example:
 
@@ -451,32 +510,117 @@ namespace DocumentManagement.API.Services
 
                    amount = 29850.00
 
-                6. totalAmount means the final amount payable / amount due after
-                   VAT and applicable discounts.
 
-                7. Never interpret an invoice number, account number, VAT number,
-                   telephone number, registration number, quantity, postal code,
-                   or reference number as a monetary value.
+                6. totalAmount means the final amount payable,
+                   invoice total, balance due, or amount due after VAT
+                   and applicable discounts.
+
+
+                7. Never interpret any of the following as a monetary value:
+
+                   - invoice number
+                   - credit note number
+                   - account number
+                   - VAT registration number
+                   - company registration number
+                   - telephone number
+                   - reference number
+                   - purchase order number
+                   - postal code
+                   - quantity
+                   - banking account number
+                   - branch code
+
 
                 8. Monetary fields must contain numbers only.
 
                    Do not include:
+
                    R
                    $
                    ZAR
                    commas
                    spaces
+                   currency symbols
 
-                9. Return invoiceDate in exactly:
+                   Example:
+
+                   ZAR 5,757.00
+
+                   must become:
+
+                   5757.00
+
+
+                9. Return invoiceDate in exactly this format:
 
                    yyyy-MM-dd
 
-                10. If a field cannot be determined reliably, return null.
+                   Example:
+
+                   02 Jul 2026
+
+                   must become:
+
+                   2026-07-02
+
+
+                10. If a field cannot be determined reliably,
+                    return null.
+
 
                 11. Never invent missing information.
 
-                12. Read values from the actual document. Use the layout,
-                    headings, tables and visual relationships where applicable.
+
+                12. Read values from the actual document.
+
+                    Use:
+
+                    - headings
+                    - tables
+                    - labels
+                    - layout
+                    - document structure
+                    - visual relationships
+                    - line items
+                    - totals sections
+
+                    when determining the correct values.
+
+
+                ============================================================
+                INVOICE TOTAL RULES
+                ============================================================
+
+                When several financial values exist, carefully distinguish:
+
+                - subtotal / net amount
+                - discounts
+                - VAT / tax
+                - invoice total
+                - previous balance
+                - payments
+                - amount due
+
+                amount should normally represent the current invoice subtotal
+                before VAT after discounts.
+
+                vat should represent only the tax charged on the current invoice.
+
+                totalAmount should represent the current invoice final total
+                payable after VAT and discounts.
+
+                Do not use:
+
+                - previous balances
+                - historical account balances
+                - old invoice totals
+                - payment amounts
+                - deposits
+
+                unless the document clearly indicates that value is the final
+                total of the current invoice.
+
 
                 ============================================================
                 REAL INVOICE REQUIREMENTS
@@ -487,27 +631,43 @@ namespace DocumentManagement.API.Services
 
                 Look for evidence such as:
 
-                - an invoice or credit note number
-                - invoice/credit-note date
-                - customer or BILL TO information
+                - invoice or credit note number
+                - invoice or credit note date
                 - supplier/business information
+                - customer information
                 - goods or services
+                - quantities or descriptions
                 - subtotal / amount
                 - VAT/tax when applicable
-                - final total or amount due
+                - final invoice total or amount due
 
-                VAT itself is NOT mandatory because some legitimate invoices may
-                have no VAT.
+                VAT itself is NOT mandatory because some legitimate invoices
+                may not charge VAT.
 
-                If the document does not contain enough evidence to reasonably
-                identify it as a genuine Invoice or Credit Note, return
-                documentType as "Other".
+                A document can still be a genuine invoice if some optional
+                information is absent.
+
+                However, if the document does not contain enough evidence to
+                reasonably identify it as a genuine Invoice or Credit Note,
+                return:
+
+                documentType = "Other"
+
 
                 ============================================================
-                RESPONSE
+                RESPONSE FORMAT
                 ============================================================
 
-                Return ONLY a JSON object.
+                Return ONLY one JSON object.
+
+                Do not include:
+
+                - Markdown
+                - ```json
+                - explanations
+                - comments
+                - additional text
+
 
                 Use exactly these property names:
 
@@ -519,7 +679,8 @@ namespace DocumentManagement.API.Services
                 vat
                 totalAmount
 
-                Example:
+
+                Example Invoice:
 
                 {
                   "documentType": "Invoice",
@@ -531,7 +692,21 @@ namespace DocumentManagement.API.Services
                   "totalAmount": 34327.50
                 }
 
-                For an unrelated document:
+
+                Example Credit Note:
+
+                {
+                  "documentType": "Credit Note",
+                  "invoiceNumber": "CN-10452",
+                  "vendor": "Northgate Retail Group (Pty) Ltd",
+                  "invoiceDate": "2026-09-05",
+                  "amount": 1000.00,
+                  "vat": 150.00,
+                  "totalAmount": 1150.00
+                }
+
+
+                Example unrelated document:
 
                 {
                   "documentType": "Other",
